@@ -436,7 +436,8 @@ if __name__ == "__main__":
                 stock_symbols.append(sys.argv[i].upper())
                 i += 1
         
-        while True:
+        running = True
+        while running:
             os.system('cls' if os.name == 'nt' else 'clear')
             
             if len(stock_symbols) > 0:
@@ -497,7 +498,8 @@ if __name__ == "__main__":
                     char = keyboard.get_input()
                     if char == 'q':
                         print("\n\n退出程序...")
-                        exit()
+                        running = False
+                        break
                 time.sleep(0.1)
             # 在刷新前清除剩余时间显示
             print("\r" + " " * 30 + "\r", end='', flush=True)
