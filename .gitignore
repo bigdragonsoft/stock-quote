@@ -1,2 +1,3 @@
 __pycache__/stock_quote.cpython-313.pyc
 .venv/
+.DS_Store

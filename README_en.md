@@ -15,6 +15,34 @@ This software is primarily designed for users who don't want to open trading sof
 - **Default Watchlist**: Displays a preset watchlist when run without parameters.
 - **Cross-platform**: Supports Windows, macOS, and Linux systems.
 
+## Screenshots
+
+### Command-Line Interface
+```
++----------+-------------+----------+-----------+
+| Symbol   |       Price |   Change | Percent   |
++==========+=============+==========+===========+
+| SH513100 |      1.691  |   0.007  | 0.42%     |
++----------+-------------+----------+-----------+
+| SH513500 |      2.174  |   0      | 0.0%      |
++----------+-------------+----------+-----------+
+| SH513180 |      0.738  |  -0.012  | -1.6%     |
++----------+-------------+----------+-----------+
+| IBIT     |     66.83   |   1.32   | 2.015%    |
++----------+-------------+----------+-----------+
+| USDCNH   |      7.1896 |   0.0096 | 0.1337%   |
++----------+-------------+----------+-----------+
+| BTC      | 116577      | 186.23   | 0.16%     |
++----------+-------------+----------+-----------+
+| 03032    |      5.445  |  -0.08   | -1.45%    |
++----------+-------------+----------+-----------+
+
+按 'Q' 键退出，或等待 25 秒后自动刷新...
+```
+
+### Graphical User Interface
+<img src="screenshot_gui.png" width="60%">
+
 ## Installation
 
 1. Clone or download this repository to your local machine.
