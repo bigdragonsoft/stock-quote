@@ -11,7 +11,7 @@ import re
 class StockQuoteGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("股票行情查看器")
+        self.root.title("Stock-Quote 股票行情查看器")
         self.root.geometry("800x600")
         
         # 设置窗口图标（如果图标文件存在）

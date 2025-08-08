@@ -10,6 +10,10 @@ import threading
 import queue
 import platform
 import re
+import urllib3
+
+# 禁用 InsecureRequestWarning
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
 class KeyboardInput:
@@ -276,15 +280,13 @@ def get_forex_info(symbol):
         return {"error": "UnexpectedError", "message": f"An unexpected error occurred for {symbol}: {e}"}
 
 
-def get_stock_info(symbol):
+def get_stock_info(session, symbol, headers):
     """
     从雪球获取并显示股票信息。
+    使用传入的 session 和 headers。
     """
-    session = requests.Session()
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
-    }
-    session.get(f"https://xueqiu.com/S/{symbol}", headers=headers)
+    # 关键步骤：在请求 API 之前，先访问一次股票页面，以获取必要的 cookie
+    session.get(f"https://xueqiu.com/S/{symbol}", headers=headers, verify=False)
 
     url = f"https://stock.xueqiu.com/v5/stock/quote.json?symbol={symbol}&extend=detail"
     
@@ -295,8 +297,9 @@ def get_stock_info(symbol):
     })
 
     try:
-        response = session.get(url, headers=api_headers)
-        response.raise_for_status()  
+        # 增加 verify=False 来绕过 SSL 验证
+        response = session.get(url, headers=api_headers, verify=False)
+        response.raise_for_status()
 
         data = response.json()
         
@@ -366,7 +369,7 @@ def save_favorites(favorites):
         print(f"保存自选股文件时出错: {e}")
 
 
-def display_favorite_stocks(favorites=None):
+def display_favorite_stocks(session, headers, favorites=None):
     """
     显示自选股的报价
     """
@@ -386,7 +389,7 @@ def display_favorite_stocks(favorites=None):
             if stock_info and "Note" in stock_info:
                 forex_notes.append(f"{symbol}: {stock_info['Note']}")
         else:
-            stock_info = get_stock_info(symbol)
+            stock_info = get_stock_info(session, symbol, headers)
             
         if stock_info:
             all_stock_info.append(stock_info)
@@ -410,6 +413,14 @@ if __name__ == "__main__":
         display_version()
         sys.exit(0)
     
+    # 创建全局唯一的 Session 和 headers
+    session = requests.Session()
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    # 第一次访问以获取 cookie
+    session.get("https://xueqiu.com", headers=headers, verify=False)
+
     keyboard = KeyboardInput()  # 初始化跨平台输入检测
     try:
         refresh_interval = 30  # 默认刷新间隔为30秒
@@ -454,7 +465,8 @@ if __name__ == "__main__":
                         if stock_info and "Note" in stock_info:
                             forex_notes.append(f"{stock_symbol}: {stock_info['Note']}")
                     else:
-                        stock_info = get_stock_info(stock_symbol)
+                        # 主循环中调用 get_stock_info
+                        stock_info = get_stock_info(session, stock_symbol, headers)
                         
                     # 检查是否有错误信息
                     if stock_info is None or (isinstance(stock_info, dict) and "error" in stock_info):
@@ -481,7 +493,7 @@ if __name__ == "__main__":
                             print(f"  {note}")
 
             else:
-                display_favorite_stocks()
+                display_favorite_stocks(session, headers)
         
             print(f"\n")
 
