@@ -1,0 +1,602 @@
+[
+  {
+    "name": "BTC",
+    "code": "bitcoin",
+    "fullname": "比特币",
+    "id": "3008"
+  },
+  {
+    "name": "ETH",
+    "code": "ethereum",
+    "fullname": "以太坊",
+    "id": "3007"
+  },
+  {
+    "name": "XRP",
+    "code": "ripple",
+    "fullname": "瑞波币",
+    "id": "37479"
+  },
+  {
+    "name": "USDT",
+    "code": "tether",
+    "fullname": "泰达币",
+    "id": "33646"
+  },
+  {
+    "name": "BNB",
+    "code": "binance-coin",
+    "fullname": "币安币",
+    "id": "32677"
+  },
+  {
+    "name": "SOL",
+    "code": "solana",
+    "fullname": "Solana",
+    "id": "33648"
+  },
+  {
+    "name": "USDC",
+    "code": "usdc",
+    "fullname": "USD Coin",
+    "id": "8249"
+  },
+  {
+    "name": "DOGE",
+    "code": "dogecoin",
+    "fullname": "狗狗币",
+    "id": "2993"
+  },
+  {
+    "name": "TRX",
+    "code": "tron",
+    "fullname": "波场",
+    "id": "32930"
+  },
+  {
+    "name": "ADA",
+    "code": "cardano",
+    "fullname": "艾达币",
+    "id": "37480"
+  },
+  {
+    "name": "WBTC",
+    "code": "wrapped-bitcoin",
+    "fullname": "Wrapped Bitcoin",
+    "id": "8641"
+  },
+  {
+    "name": "XLM",
+    "code": "stellar",
+    "fullname": "恒星币",
+    "id": "2986"
+  },
+  {
+    "name": "SUI",
+    "code": "sui",
+    "fullname": "Sui",
+    "id": "33909"
+  },
+  {
+    "name": "LINK",
+    "code": "chainlink",
+    "fullname": "ChainLink",
+    "id": "3245"
+  },
+  {
+    "name": "BCH",
+    "code": "bitcoin-cash",
+    "fullname": "比特现金",
+    "id": "37482"
+  },
+  {
+    "name": "HBAR",
+    "code": "hederahashgraph",
+    "fullname": "Hedera Hashgraph",
+    "id": "8320"
+  },
+  {
+    "name": "AVAX",
+    "code": "avalanche",
+    "fullname": "Avalanche",
+    "id": "37483"
+  },
+  {
+    "name": "LTC",
+    "code": "litecoin",
+    "fullname": "莱特币",
+    "id": "37481"
+  },
+  {
+    "name": "LEO",
+    "code": "leotoken",
+    "fullname": "UNUS SED LEO",
+    "id": "8255"
+  },
+  {
+    "name": "TON",
+    "code": "toncoin",
+    "fullname": "Toncoin",
+    "id": "25578"
+  },
+  {
+    "name": "SHIB",
+    "code": "shibainu",
+    "fullname": "Shiba Inu",
+    "id": "10547"
+  },
+  {
+    "name": "UNI",
+    "code": "uniswap",
+    "fullname": "Uniswap",
+    "id": "10497"
+  },
+  {
+    "name": "DOT",
+    "code": "polkadot100",
+    "fullname": "波卡币",
+    "id": "8296"
+  },
+  {
+    "name": "DAI",
+    "code": "dai",
+    "fullname": "Dai Stablecoin",
+    "id": "4759"
+  },
+  {
+    "name": "BGB",
+    "code": "bitgettoken",
+    "fullname": "Bitgetu5e73u53f0u5e01",
+    "id": "19523"
+  },
+  {
+    "name": "XMR",
+    "code": "monero",
+    "fullname": "门罗币",
+    "id": "3004"
+  },
+  {
+    "name": "CRO",
+    "code": "crypto-com-chain",
+    "fullname": "Cronos",
+    "id": "8913"
+  },
+  {
+    "name": "PEPE",
+    "code": "pepe",
+    "fullname": "Pepe",
+    "id": "32931"
+  },
+  {
+    "name": "AAVE",
+    "code": "aave-new",
+    "fullname": "Aave",
+    "id": "10534"
+  },
+  {
+    "name": "ENA",
+    "code": "ethena",
+    "fullname": "Ethena",
+    "id": "37785"
+  },
+  {
+    "name": "WBETH",
+    "code": "wrapped-beacon-eth",
+    "fullname": "Wrapped Beacon ETH",
+    "id": "33857"
+  },
+  {
+    "name": "MNT",
+    "code": "mantle",
+    "fullname": "Mantle",
+    "id": "33913"
+  },
+  {
+    "name": "TAO",
+    "code": "bittensor",
+    "fullname": "Bittensor",
+    "id": "33850"
+  },
+  {
+    "name": "ETC",
+    "code": "ethereum-classic",
+    "fullname": "以太经典",
+    "id": "2998"
+  },
+  {
+    "name": "NEAR",
+    "code": "nearprotocol",
+    "fullname": "NEAR Protocol",
+    "id": "10533"
+  },
+  {
+    "name": "APT",
+    "code": "aptos",
+    "fullname": "Aptos",
+    "id": "25581"
+  },
+  {
+    "name": "ICP",
+    "code": "dfinity",
+    "fullname": "Internet Computer(Dfinity)",
+    "id": "25587"
+  },
+  {
+    "name": "PI",
+    "code": "pi-network-1",
+    "fullname": "Pi Network",
+    "id": null
+  },
+  {
+    "name": "OKB",
+    "code": "okb",
+    "fullname": "OKu5e01",
+    "id": "5987"
+  },
+  {
+    "name": "KAS",
+    "code": "kaspa",
+    "fullname": "Kaspa",
+    "id": "14951"
+  },
+  {
+    "name": "MATIC",
+    "code": "matictoken",
+    "fullname": "Polygon",
+    "id": "8341"
+  },
+  {
+    "name": "ALGO",
+    "code": "algorand",
+    "fullname": "Algorand",
+    "id": "8391"
+  },
+  {
+    "name": "HTX",
+    "code": "htx",
+    "fullname": "HTX",
+    "id": "37781"
+  },
+  {
+    "name": "ARB",
+    "code": "arbitrum",
+    "fullname": "Arbitrum",
+    "id": "32674"
+  },
+  {
+    "name": "BONK",
+    "code": "bonk1",
+    "fullname": "Bonk",
+    "id": "33916"
+  },
+  {
+    "name": "VET",
+    "code": "vechaincom",
+    "fullname": "唯链",
+    "id": "3158"
+  },
+  {
+    "name": "GT",
+    "code": "gatechaintoken",
+    "fullname": "Gatechain Token",
+    "id": "10275"
+  },
+  {
+    "name": "BIT",
+    "code": "bitdao",
+    "fullname": "BitDAO",
+    "id": "25606"
+  },
+  {
+    "name": "TRUMP",
+    "code": "official-trump",
+    "fullname": "OFFICIAL TRUMP",
+    "id": null
+  },
+  {
+    "name": "SEI",
+    "code": "seiio",
+    "fullname": "Sei",
+    "id": "33853"
+  },
+  {
+    "name": "WLD",
+    "code": "worldcoin-wld",
+    "fullname": "Worldcoin",
+    "id": "32915"
+  },
+  {
+    "name": "FDUSD",
+    "code": "firstdigitalusd",
+    "fullname": "First Digital USD",
+    "id": "33851"
+  },
+  {
+    "name": "ATOM",
+    "code": "cosmos",
+    "fullname": "阿童木",
+    "id": "32679"
+  },
+  {
+    "name": "MKR",
+    "code": "maker",
+    "fullname": "Maker",
+    "id": "3749"
+  },
+  {
+    "name": "FIL",
+    "code": "filecoinnew",
+    "fullname": "Filecoin",
+    "id": "5989"
+  },
+  {
+    "name": "FET",
+    "code": "fetchai",
+    "fullname": "Fetch.AI",
+    "id": "8291"
+  },
+  {
+    "name": "FLR",
+    "code": "spark",
+    "fullname": "Flare",
+    "id": "33852"
+  },
+  {
+    "name": "XDC",
+    "code": "xinfin",
+    "fullname": "XDC Network",
+    "id": "10580"
+  },
+  {
+    "name": "RNDR",
+    "code": "rndrtoken",
+    "fullname": "RNDR Token",
+    "id": "9040"
+  },
+  {
+    "name": "INJ",
+    "code": "injectiveprotocol",
+    "fullname": "Injective Protocol",
+    "id": "10557"
+  },
+  {
+    "name": "BNX",
+    "code": "bnxnew",
+    "fullname": "BinaryX",
+    "id": "25361"
+  },
+  {
+    "name": "QNT",
+    "code": "quant",
+    "fullname": "Quant",
+    "id": "8264"
+  },
+  {
+    "name": "KCS",
+    "code": "kcs",
+    "fullname": "KuCoin Token",
+    "id": "3244"
+  },
+  {
+    "name": "CRV",
+    "code": "curve",
+    "fullname": "Curve",
+    "id": "33653"
+  },
+  {
+    "name": "PENDLE",
+    "code": "pendlefinance",
+    "fullname": "Pendle",
+    "id": "37664"
+  },
+  {
+    "name": "OP",
+    "code": "optimism",
+    "fullname": "Optimism",
+    "id": "25612"
+  },
+  {
+    "name": "STX",
+    "code": "blockstack",
+    "fullname": "Stacks",
+    "id": "32681"
+  },
+  {
+    "name": "TIA",
+    "code": "celestia",
+    "fullname": "Celestia",
+    "id": "37928"
+  },
+  {
+    "name": "WIF",
+    "code": "dogwifhat",
+    "fullname": "dogwifhat",
+    "id": "37736"
+  },
+  {
+    "name": "LDO",
+    "code": "lidodaotoken",
+    "fullname": "Lido DAO Token",
+    "id": "11008"
+  },
+  {
+    "name": "GRT",
+    "code": "graph",
+    "fullname": "Graph",
+    "id": "10539"
+  },
+  {
+    "name": "CFX",
+    "code": "confluxtoken",
+    "fullname": "Conflux",
+    "id": "10552"
+  },
+  {
+    "name": "FTM",
+    "code": "fantom",
+    "fullname": "Fantom",
+    "id": "8309"
+  },
+  {
+    "name": "EOS",
+    "code": "eos",
+    "fullname": "柚子",
+    "id": "2997"
+  },
+  {
+    "name": "THETA",
+    "code": "thetatoken",
+    "fullname": "Theta",
+    "id": "4690"
+  },
+  {
+    "name": "XTZ",
+    "code": "tezos",
+    "fullname": "Tezos",
+    "id": "7048"
+  },
+  {
+    "name": "PAXG",
+    "code": "paxgold",
+    "fullname": "PAX Gold",
+    "id": "8715"
+  },
+  {
+    "name": "NEXO",
+    "code": "nexo",
+    "fullname": "Nexo",
+    "id": "5970"
+  },
+  {
+    "name": "IMX",
+    "code": "immutablex",
+    "fullname": "Immutable X",
+    "id": "25608"
+  },
+  {
+    "name": "JASMY",
+    "code": "jasmy",
+    "fullname": "Jasmy",
+    "id": "11082"
+  },
+  {
+    "name": "USDD",
+    "code": "decentralized-usd-trx",
+    "fullname": "USDD",
+    "id": "11011"
+  },
+  {
+    "name": "DEXE",
+    "code": "dexe",
+    "fullname": "Dexe.network",
+    "id": "32696"
+  },
+  {
+    "name": "BTT",
+    "code": "bittorrentchain",
+    "fullname": "BitTorrent (new)",
+    "id": "8250"
+  },
+  {
+    "name": "SAND",
+    "code": "thesandbox",
+    "fullname": "The Sandbox",
+    "id": "9874"
+  },
+  {
+    "name": "IOTA",
+    "code": "iota",
+    "fullname": "埃欧塔",
+    "id": "27490"
+  },
+  {
+    "name": "ZEC",
+    "code": "zcash",
+    "fullname": "大零币",
+    "id": "3001"
+  },
+  {
+    "name": "CAKE",
+    "code": "pancakeswap",
+    "fullname": "PancakeSwap",
+    "id": "10549"
+  },
+  {
+    "name": "MANA",
+    "code": "decentraland",
+    "fullname": "Decentraland",
+    "id": "30520"
+  },
+  {
+    "name": "ENS",
+    "code": "ethereumnameservice",
+    "fullname": "Ethereum Name Service",
+    "id": "11013"
+  },
+  {
+    "name": "FLOW",
+    "code": "flow",
+    "fullname": "Flow",
+    "id": "10588"
+  },
+  {
+    "name": "BSV",
+    "code": "bitcoin-cash-sv",
+    "fullname": "比特币SV",
+    "id": "8247"
+  },
+  {
+    "name": "TUSD",
+    "code": "true-usd",
+    "fullname": "TrueUSD",
+    "id": "4891"
+  },
+  {
+    "name": "GALA",
+    "code": "gala",
+    "fullname": "Gala",
+    "id": "10812"
+  },
+  {
+    "name": "KLAY",
+    "code": "klaytn",
+    "fullname": "Klaytn",
+    "id": "8849"
+  },
+  {
+    "name": "CORE",
+    "code": "core",
+    "fullname": "Core",
+    "id": "33865"
+  },
+  {
+    "name": "AR",
+    "code": "arweave",
+    "fullname": "Arweave",
+    "id": "8688"
+  },
+  {
+    "name": "HNT",
+    "code": "hnt",
+    "fullname": "Helium",
+    "id": "25343"
+  },
+  {
+    "name": "RUNE",
+    "code": "thorchain",
+    "fullname": "THORChain",
+    "id": "8700"
+  },
+  {
+    "name": "RAY",
+    "code": "raydium",
+    "fullname": "Raydium",
+    "id": "10630"
+  },
+  {
+    "name": "NEO",
+    "code": "neo",
+    "fullname": "Neo",
+    "id": "3003"
+  }
+]

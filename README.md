@@ -1,2 +1,173 @@
-# stock-quote
-Stock, Forex, and Cryptocurrency Quote Tool 股票、外汇、加密货币报价工具
+[English Version](README_en.md)
+
+# 股票、外汇、加密货币报价工具
+
+这是一个命令行和图形界面的股票、外汇和加密货币报价查看工具。它可以从雪球获取股票数据，从新浪财经获取外汇数据，从528btc获取加密货币数据，并在终端或图形界面中以表格形式展示。
+
+本软件主要面向不便于或不喜欢打开交易软件，以及不喜欢从网页中查看行情的用户群体。通过简洁的终端或图形界面，用户可以快速获取所需的行情信息，避免了打开繁重交易软件或浏览网页的麻烦。
+
+## 功能特性
+
+- **实时数据**：获取实时的股票、外汇和加密货币报价。
+- **双界面支持**：提供命令行界面和图形用户界面两种使用方式。
+- **支持多种代码**：支持 A 股、港股、美股等多种股票代码，以及主流外汇对（如 USDJPY, USDCNY）和加密货币（如 BTC, ETH）。
+- **自定义刷新率**：可以自定义数据的刷新时间间隔。
+- **默认自选列表**：不带任何参数运行时，会显示一个预设的自选列表。
+- **跨平台**：支持在 Windows, macOS 和 Linux 系统上运行。
+
+## 安装
+
+1.  克隆或下载本仓库到本地。
+2.  确保您已安装 Python 3。
+3.  安装所需的依赖库：
+
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+## 使用方法
+
+### 命令行界面
+
+通过命令行运行 `stock_quote.py` 脚本。
+
+#### 基本用法
+
+```bash
+python stock_quote.py [选项] [股票/外汇/加密货币代码...]
+```
+
+#### 选项
+
+-   `-i <秒数>`: 指定刷新间隔的秒数，默认为 30 秒。
+-   `-h`, `--help`: 显示帮助信息。
+-   `-v`, `--version`: 显示版本信息。
+
+#### 示例
+
+-   **查看默认自选列表** (每 30 秒刷新):
+    ```bash
+    python stock_quote.py
+    ```
+
+-   **查看指定股票** (例如：纳指100ETF):
+    ```bash
+    python stock_quote.py SH513100
+    ```
+
+-   **查看多种股票并设置刷新间隔为10秒**:
+    ```bash
+    python stock_quote.py -i 10 SH513100 SH513500
+    ```
+
+-   **查看外汇汇率** (例如：美元兑日元):
+    ```bash
+    python stock_quote.py USDJPY
+    ```
+
+-   **查看加密货币价格** (例如：比特币):
+    ```bash
+    python stock_quote.py BTC
+    ```
+
+-   **同时查看股票、外汇和加密货币**:
+    ```bash
+    python stock_quote.py SH513100 USDJPY BTC ETH
+    ```
+
+#### 交互
+
+-   在程序运行过程中，按 `q` 键可以随时退出程序。
+-   按 `Ctrl+C` 也可以终止程序。
+
+### 图形用户界面
+
+通过运行 `stock_quote_gui.py` 脚本启动图形界面版本：
+
+```bash
+python stock_quote_gui.py
+```
+
+图形界面提供了更丰富的交互功能：
+- 可视化管理自选股列表（支持股票、外汇和加密货币）
+- 实时刷新和手动刷新控制
+- 可调节的刷新间隔
+- 滚动表格显示大量数据
+- 状态栏显示更新时间和倒计时
+
+在图形界面中，可以通过"管理股票"功能添加加密货币代码（如BTC、ETH等）到自选列表中。
+
+## 程序打包发行
+
+为了方便使用，您可以将程序打包为可执行文件，这样在没有安装 Python 环境的计算机上也可以运行。
+
+### 使用 PyInstaller 打包
+
+1. 安装 PyInstaller：
+   ```bash
+   pip install pyinstaller
+   ```
+
+2. 打包命令行版本：
+   ```bash
+   pyinstaller --onefile stock_quote.py
+   ```
+   
+3. 打包图形界面版本：
+   ```bash
+   pyinstaller --onefile --windowed stock_quote_gui.py
+   ```
+
+4. 打包完成后，可执行文件将位于 `dist` 目录中。
+
+### 打包参数说明
+
+- `--onefile`: 将所有依赖打包成一个单独的可执行文件
+- `--windowed`: 对于 GUI 应用，避免显示控制台窗口（Windows 和 macOS）
+- `--icon=icon.ico`: 指定可执行文件的图标（需要准备.ico格式的图标文件）
+- `--name=StockQuote`: 指定生成的可执行文件名称
+
+### 自定义打包示例
+
+```bash
+# 打包命令行版本，指定图标和名称
+pyinstaller --onefile --name=StockQuoteCLI --icon=icon.ico stock_quote.py
+
+# 打包图形界面版本，指定图标和名称
+pyinstaller --onefile --windowed --name=StockQuoteGUI --icon=icon.ico stock_quote_gui.py
+```
+
+### 注意事项
+
+1. 打包后的文件可能会被杀毒软件误报，这是正常现象，因为 PyInstaller 打包的文件结构可能被误判
+2. 打包过程可能需要一些时间，特别是首次打包时
+3. 生成的可执行文件大小可能较大（通常 50-100MB），因为包含了 Python 解释器和所有依赖
+4. 如果需要更小的文件体积，可以考虑使用虚拟环境只安装必要的依赖后再打包
+
+## 支持的加密货币
+
+当前版本支持以下加密货币：
+- BTC (比特币)
+- ETH (以太坊)
+- XRP (瑞波币)
+- USDT (泰达币)
+- BNB (币安币)
+- SOL (索拉纳)
+- USDC (USD Coin)
+- DOGE (狗狗币)
+- ADA (卡尔达诺)
+- SHIB (柴犬币)
+
+## 数据源
+
+- **股票数据**：来自雪球网 (xueqiu.com)
+- **外汇数据**：来自新浪财经 (finance.sina.com.cn)
+- **加密货币数据**：来自528btc网站 (528btc.com)
+
+## 配置文件
+
+程序使用 `favorites.json` 文件存储自选股列表。首次运行时会自动创建默认配置文件。
+
+## 依赖
+
+请参阅 `requirements.txt` 文件了解所有依赖项。
