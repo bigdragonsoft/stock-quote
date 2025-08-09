@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 class StockQuoteGUI:
@@ -13,6 +14,9 @@ class StockQuoteGUI:
         self.root = root
         self.root.title("Stock-Quote 股票行情查看器")
         self.root.geometry("800x600")
+        
+        # 创建一个共享的 Session
+        self.session = requests.Session()
         
         # 设置窗口图标（如果图标文件存在）
         self.set_window_icon()
@@ -22,9 +26,11 @@ class StockQuoteGUI:
         
         # 从文件加载自选股
         self.default_stocks = self.load_favorites()
+        self.default_indexes = self.load_indexes()
         
         # 当前股票列表
         self.current_stocks = self.default_stocks.copy()
+        self.current_mode = 'favorites'  # 'favorites' or 'indexes'
         
         # 刷新间隔（秒）
         self.refresh_interval = 30
@@ -37,11 +43,11 @@ class StockQuoteGUI:
         self.create_widgets()
         
         # 获取初始数据
-        self.load_stock_data()
+        self.trigger_data_load()
         
         # 启动自动刷新
         self.refresh_active = True
-        self.root.after(1000, self.refresh_worker())
+        self.root.after(1000, self.refresh_worker)
     
     def create_menu(self):
         # 创建菜单栏
@@ -96,6 +102,40 @@ class StockQuoteGUI:
                 json.dump({'stocks': favorites}, f, ensure_ascii=False, indent=4)
         except Exception as e:
             print(f"保存自选股文件时出错: {e}")
+
+    def load_indexes(self):
+        """
+        从文件加载指数列表
+        """
+        indexes_file = os.path.join(os.path.dirname(__file__), 'indexes.json')
+        try:
+            if os.path.exists(indexes_file):
+                with open(indexes_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    return data.get('indexes', [])
+            else:
+                # 如果文件不存在，创建默认文件
+                default_indexes = [
+                    "SH000001", "SZ399001", "SZ399006", "SH000688",
+                    "SH000016", "BJ899050", "HKHSI", "HKHSTECH",
+                    ".DJI", ".IXIC", ".INX"
+                ]
+                self.save_indexes(default_indexes)
+                return default_indexes
+        except Exception as e:
+            print(f"加载指数文件时出错: {e}")
+            return []
+
+    def save_indexes(self, indexes):
+        """
+        将指数列表保存到文件
+        """
+        indexes_file = os.path.join(os.path.dirname(__file__), 'indexes.json')
+        try:
+            with open(indexes_file, 'w', encoding='utf-8') as f:
+                json.dump({'indexes': indexes}, f, ensure_ascii=False, indent=4)
+        except Exception as e:
+            print(f"保存指数文件时出错: {e}")
     
     def create_widgets(self):
         # 创建主框架
@@ -115,8 +155,12 @@ class StockQuoteGUI:
         self.edit_button.pack(side=tk.LEFT)
         
         # 自选股按钮
-        favorites_button = ttk.Button(control_frame, text="显示自选股", command=self.show_favorites)
-        favorites_button.pack(side=tk.LEFT, padx=(10, 0))
+        self.favorites_button = ttk.Button(control_frame, text="显示自选股", command=self.show_favorites)
+        self.favorites_button.pack(side=tk.LEFT, padx=(10, 0))
+        
+        # 指数按钮
+        self.indexes_button = ttk.Button(control_frame, text="显示指数", command=self.show_indexes)
+        self.indexes_button.pack(side=tk.LEFT, padx=(10, 0))
         
         # 刷新间隔设置
         ttk.Label(control_frame, text="刷新间隔(秒):").pack(side=tk.LEFT, padx=(10, 5))
@@ -168,6 +212,12 @@ class StockQuoteGUI:
         self.stock_listbox = tk.Listbox(self.list_frame, yscrollcommand=scrollbar.set)
         self.stock_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         scrollbar.config(command=self.stock_listbox.yview)
+        
+        # 绑定拖放事件
+        self.stock_listbox.bind('<Button-1>', self.on_drag_start)
+        self.stock_listbox.bind('<B1-Motion>', self.on_drag_motion)
+        self.stock_listbox.bind('<ButtonRelease-1>', self.on_drop)
+        self.drag_start_index = None
         
         # 添加默认股票到列表框
         for stock in self.current_stocks:
@@ -415,11 +465,10 @@ class StockQuoteGUI:
         
         try:
             # 为了获取必要的 cookie，我们首先访问股票页面
-            session = requests.Session()
             headers = {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
             }
-            session.get(f"https://xueqiu.com/S/{symbol}", headers=headers)
+            self.session.get(f"https://xueqiu.com/S/{symbol}", headers=headers)
 
             url = f"https://stock.xueqiu.com/v5/stock/quote.json?symbol={symbol}&extend=detail"
             
@@ -431,7 +480,7 @@ class StockQuoteGUI:
             })
 
             # 发起 API 请求
-            response = session.get(url, headers=api_headers)
+            response = self.session.get(url, headers=api_headers)
             response.raise_for_status()
 
             data = response.json()
@@ -464,54 +513,62 @@ class StockQuoteGUI:
             print(f"未知错误: {e}")
             return None
     
+    def trigger_data_load(self):
+        """
+        在后台线程中触发数据加载
+        """
+        self.status_var.set("正在获取数据...")
+        # 使用线程以避免阻塞GUI
+        threading.Thread(target=self.load_stock_data, daemon=True).start()
+
     def load_stock_data(self):
         """
-        加载并显示股票数据
+        加载并显示股票数据（在后台线程中运行）
         """
         if not self.current_stocks:
-            # 清除现有内容
-            for widget in self.scrollable_frame.winfo_children():
-                widget.destroy()
-            
-            # 显示提示信息
-            label = ttk.Label(self.scrollable_frame, text="请添加股票代码")
-            label.pack()
+            # 在主线程中更新GUI
+            self.root.after(0, self.update_gui_with_data, [])
             return
         
-        # 显示加载状态
-        self.status_var.set("正在获取数据...")
-        self.root.update()
-        
-        # 获取所有股票信息
         all_stock_info = []
-        forex_notes = []  # 存储外汇提示信息
-        for symbol in self.current_stocks:
-            stock_info = self.get_stock_info(symbol)
-            if stock_info:
-                all_stock_info.append(stock_info)
-                # 如果是外汇，添加提示信息
-                #if self.is_forex_symbol(symbol):
-                #    forex_notes.append(f"{symbol}: 使用新浪财经实时数据")
-        
+        # 使用线程池并发获取数据
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            # 创建一个从 future 到 symbol 的映射
+            future_to_symbol = {executor.submit(self.get_stock_info, symbol): symbol for symbol in self.current_stocks}
+            
+            for future in as_completed(future_to_symbol):
+                try:
+                    stock_info = future.result()
+                    if stock_info:
+                        all_stock_info.append(stock_info)
+                except Exception as e:
+                    symbol = future_to_symbol[future]
+                    print(f"获取 {symbol} 数据时出错: {e}")
+
+        # 按原始顺序排序结果
+        symbol_order = {symbol: i for i, symbol in enumerate(self.current_stocks)}
+        all_stock_info.sort(key=lambda x: symbol_order.get(x['Symbol'], float('inf')))
+
+        # 在主线程中更新GUI
+        self.root.after(0, self.update_gui_with_data, all_stock_info)
+
+    def update_gui_with_data(self, all_stock_info):
+        """
+        用获取到的数据更新GUI（在主线程中运行）
+        """
         # 清除现有内容
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
         
-        # 创建一个主容器框架来使用pack布局
-        main_container = ttk.Frame(self.scrollable_frame)
-        main_container.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        
-        # 显示外汇提示信息
-        if forex_notes:
-            note_frame = ttk.Frame(main_container)
-            note_frame.pack(fill=tk.X, padx=5, pady=5)
-            note_label = ttk.Label(note_frame, text="注意: " + " | ".join(forex_notes), 
-                                  foreground="blue", wraplength=700, justify=tk.LEFT)
-            note_label.pack()
-        
+        if not self.current_stocks:
+            label = ttk.Label(self.scrollable_frame, text="请添加股票代码")
+            label.pack()
+            self.status_var.set("就绪")
+            return
+
         if all_stock_info:
             # 创建表格框架
-            table_frame = ttk.Frame(main_container)
+            table_frame = ttk.Frame(self.scrollable_frame)
             table_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
             
             # 定义列宽权重和最小宽度
@@ -535,7 +592,7 @@ class StockQuoteGUI:
             # 添加数据行
             for row, stock in enumerate(all_stock_info, start=1):
                 # 根据状态设置显示的文字
-                status_text = stock['Status']
+                status_text = stock.get('Status', '')
                 if '收盘' in status_text or 'halt' in status_text.lower():
                     status_display = "CLOSED"
                 elif '交易' in status_text or 'trading' in status_text.lower():
@@ -544,8 +601,8 @@ class StockQuoteGUI:
                     status_display = "-"
                 
                 # 显示每列数据
-                data_values = [stock['Region'], status_display, stock['Symbol'], 
-                              stock['Price'], stock['Change'], stock['Percent'], stock['Name']]
+                data_values = [stock.get('Region', '-'), status_display, stock.get('Symbol', '-'), 
+                              stock.get('Price', '-'), stock.get('Change', '-'), stock.get('Percent', '-'), stock.get('Name', '-')]
                 
                 for col, value in enumerate(data_values):
                     label = ttk.Label(table_frame, text=str(value), 
@@ -557,11 +614,12 @@ class StockQuoteGUI:
                 table_frame.columnconfigure(i, weight=config["weight"], minsize=config["minsize"])
         else:
             # 显示错误信息
-            label = ttk.Label(main_container, text="未能获取任何股票数据")
+            label = ttk.Label(self.scrollable_frame, text="未能获取任何股票数据")
             label.pack()
         
         # 更新状态栏
         self.status_var.set(f"上次更新: {time.strftime('%H:%M:%S')} - 刷新间隔: {self.refresh_interval}秒")
+        self.last_refresh_time = time.time()
     
     def add_stock(self):
         """
@@ -579,9 +637,12 @@ class StockQuoteGUI:
         self.current_stocks.append(stock_code)
         self.stock_listbox.insert(tk.END, stock_code)
         self.stock_entry.delete(0, tk.END)
-        self.load_stock_data()
-        # 保存到文件
-        self.save_favorites(self.current_stocks)
+        self.trigger_data_load()
+        # 根据当前模式保存到对应的文件
+        if self.current_mode == 'favorites':
+            self.save_favorites(self.current_stocks)
+        else:
+            self.save_indexes(self.current_stocks)
     
     def remove_stock(self):
         """
@@ -596,9 +657,12 @@ class StockQuoteGUI:
         stock_code = self.stock_listbox.get(index)
         self.current_stocks.remove(stock_code)
         self.stock_listbox.delete(index)
-        self.load_stock_data()
-        # 保存到文件
-        self.save_favorites(self.current_stocks)
+        self.trigger_data_load()
+        # 根据当前模式保存到对应的文件
+        if self.current_mode == 'favorites':
+            self.save_favorites(self.current_stocks)
+        else:
+            self.save_indexes(self.current_stocks)
     
     def update_interval(self):
         """
@@ -634,12 +698,19 @@ class StockQuoteGUI:
             self.update_status_bar("自动刷新已停止")
             self.remaining_time_var.set("")
     
-    def show_favorites(self):
+    def show_indexes(self):
         """
-        显示自选股
+        显示指数
         """
-        # 重置为默认自选股
-        self.current_stocks = self.default_stocks.copy()
+        self.current_mode = 'indexes'
+        
+        # 禁用编辑功能
+        self.edit_button.config(state=tk.DISABLED)
+        if self.edit_frame_visible:
+            self.toggle_edit_frame()
+            
+        # 从文件加载指数列表
+        self.current_stocks = self.load_indexes()
         
         # 更新列表框
         self.stock_listbox.delete(0, tk.END)
@@ -650,9 +721,30 @@ class StockQuoteGUI:
         self.load_stock_data()
         
         # 更新状态栏
-        self.update_status_bar()
-        # 保存到文件
-        self.save_favorites(self.current_stocks)
+        self.update_status_bar("已加载指数列表")
+    
+    def show_favorites(self):
+        """
+        显示自选股
+        """
+        self.current_mode = 'favorites'
+        
+        # 启用编辑功能
+        self.edit_button.config(state=tk.NORMAL)
+        
+        # 从文件重新加载自选股，以确保获取最新列表
+        self.current_stocks = self.load_favorites()
+        
+        # 更新列表框
+        self.stock_listbox.delete(0, tk.END)
+        for stock in self.current_stocks:
+            self.stock_listbox.insert(tk.END, stock)
+        
+        # 加载数据
+        self.load_stock_data()
+        
+        # 更新状态栏
+        self.update_status_bar("已加载自选股列表")
     
     def refresh_worker(self):
         """
@@ -661,8 +753,8 @@ class StockQuoteGUI:
         if self.refresh_active:
             current_time = time.time()
             if current_time - self.last_refresh_time >= self.refresh_interval:
-                self.load_stock_data()
-                self.last_refresh_time = current_time
+                self.trigger_data_load()
+                # last_refresh_time will be updated in update_gui_with_data
             else:
                 remaining = int(self.refresh_interval - (current_time - self.last_refresh_time))
                 self.remaining_time_var.set(f"下次刷新: {remaining}秒")
@@ -681,6 +773,66 @@ class StockQuoteGUI:
     
     def on_closing(self):
         self.root.destroy()
+    
+    def on_drag_start(self, event):
+        """
+        记录拖动开始时的项目索引
+        """
+        widget = event.widget
+        index = widget.nearest(event.y)
+        
+        # 检查点击是否在有效项目上
+        if 0 <= index < widget.size():
+            # 激活该项，以便视觉上确认
+            widget.activate(index)
+            self.drag_start_index = index
+        else:
+            self.drag_start_index = None
+
+    def on_drag_motion(self, event):
+        """
+        在拖动时更新列表框中的项目位置
+        """
+        if self.drag_start_index is None:
+            return
+        
+        widget = event.widget
+        current_index = widget.nearest(event.y)
+        
+        if current_index != -1 and current_index != self.drag_start_index:
+            # 获取拖动的项目
+            item = widget.get(self.drag_start_index)
+            
+            # 从原位置删除
+            widget.delete(self.drag_start_index)
+            
+            # 插入到新位置
+            widget.insert(current_index, item)
+            
+            # 更新拖动开始的索引
+            self.drag_start_index = current_index
+
+    def on_drop(self, event):
+        """
+        拖放结束时，更新数据源并保存
+        """
+        if self.drag_start_index is None:
+            return
+        
+        # 更新 current_stocks 列表
+        self.current_stocks = list(self.stock_listbox.get(0, tk.END))
+        
+        # 根据当前模式保存到对应的文件
+        if self.current_mode == 'favorites':
+            self.save_favorites(self.current_stocks)
+        else:
+            self.save_indexes(self.current_stocks)
+        
+        # 重新加载主视图以反映顺序
+        self.trigger_data_load()
+        
+        # 重置拖动索引
+        self.drag_start_index = None
     
     def set_window_icon(self):
         """

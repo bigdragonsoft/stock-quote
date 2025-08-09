@@ -12,7 +12,8 @@ This software is primarily designed for users who don't want to open trading sof
 - **Dual Interface Support**: Provides both command-line interface and graphical user interface.
 - **Multiple Code Support**: Supports various stock codes (A-shares, Hong Kong stocks, US stocks), major forex pairs (such as USDJPY, USDCNY), and cryptocurrencies (such as BTC, ETH).
 - **Customizable Refresh Rate**: Customize the data refresh interval.
-- **Default Watchlist**: Displays a preset watchlist when run without parameters.
+- **Favorites and Indexes**: Supports viewing both a user-defined watchlist and a fixed list of market indexes.
+- **List Management**: The GUI version supports drag-and-drop sorting, adding, and removing stocks from your watchlist.
 - **Cross-platform**: Supports Windows, macOS, and Linux systems.
 
 ## Screenshots
@@ -68,6 +69,7 @@ python stock_quote.py [options] [stock/forex/cryptocurrency codes...]
 #### Options
 
 - `-i <seconds>`: Specify the refresh interval in seconds, default is 30 seconds.
+- `-idx`, `--indexes`: Display the list of indexes instead of the favorites watchlist.
 - `-h`, `--help`: Display help information.
 - `-v`, `--version`: Display version information.
 
@@ -76,6 +78,11 @@ python stock_quote.py [options] [stock/forex/cryptocurrency codes...]
 - **View default watchlist** (refresh every 30 seconds):
     ```bash
     python stock_quote.py
+    ```
+
+- **View the index list**:
+    ```bash
+    python stock_quote.py --indexes
     ```
 
 - **View specific stock** (e.g., Nasdaq 100 ETF):
@@ -117,13 +124,10 @@ python stock_quote_gui.py
 ```
 
 The graphical interface provides richer interactive features:
-- Visual management of watchlists (supports stocks, forex, and cryptocurrencies)
-- Real-time and manual refresh control
-- Adjustable refresh interval
-- Scrollable table for displaying large amounts of data
-- Status bar showing update time and countdown
-
-In the graphical interface, you can add cryptocurrency codes (such as BTC, ETH) to the watchlist through the "Manage Stocks" function.
+- **List Switching**: Easily switch between your favorites watchlist and the market index list.
+- **Watchlist Management**: Add, remove, and reorder your favorite stocks with drag-and-drop. The index list is read-only.
+- **Real-time Refresh**: Customize the refresh interval, and pause or manually refresh at any time.
+- **Status Display**: The status bar clearly shows the last update time and a countdown to the next refresh.
 
 ## Program Packaging and Distribution
 
@@ -192,9 +196,11 @@ The current version supports the following cryptocurrencies:
 - **Forex Data**: From Sina Finance (finance.sina.com.cn)
 - **Cryptocurrency Data**: From 528btc (528btc.com)
 
-## Configuration File
+## Configuration Files
 
-The program uses the `favorites.json` file to store the watchlist. A default configuration file will be automatically created on first run.
+The program uses the following JSON files for configuration, which are created automatically on the first run:
+- `favorites.json`: Stores your personal watchlist, which can be edited through the GUI.
+- `indexes.json`: Stores a fixed list of market indexes. This list cannot be edited from the GUI but can be modified by editing the file directly.
 
 ## Dependencies
 

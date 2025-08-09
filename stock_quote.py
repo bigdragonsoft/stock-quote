@@ -11,6 +11,7 @@ import queue
 import platform
 import re
 import urllib3
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # 禁用 InsecureRequestWarning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -79,6 +80,7 @@ def display_help():
 
 选项:
   -i <秒数>        指定刷新间隔秒数，默认为30秒
+  -idx, --indexes  显示指数列表而不是自选股
   -h, --help       显示此帮助信息并退出
   -v, --version    显示版本信息
 
@@ -369,6 +371,42 @@ def save_favorites(favorites):
         print(f"保存自选股文件时出错: {e}")
 
 
+def load_indexes():
+    """
+    从文件加载指数列表
+    """
+    indexes_file = os.path.join(os.path.dirname(__file__), 'indexes.json')
+    try:
+        if os.path.exists(indexes_file):
+            with open(indexes_file, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                return data.get('indexes', [])
+        else:
+            # 如果文件不存在，创建默认文件
+            default_indexes = [
+                "SH000001", "SZ399001", "SZ399006", "SH000688",
+                "SH000016", "BJ899050", "HKHSI", "HKHSTECH",
+                ".DJI", ".IXIC", ".INX"
+            ]
+            save_indexes(default_indexes)
+            return default_indexes
+    except Exception as e:
+        print(f"加载指数文件时出错: {e}")
+        return []
+
+
+def save_indexes(indexes):
+    """
+    将指数列表保存到文件
+    """
+    indexes_file = os.path.join(os.path.dirname(__file__), 'indexes.json')
+    try:
+        with open(indexes_file, 'w', encoding='utf-8') as f:
+            json.dump({'indexes': indexes}, f, ensure_ascii=False, indent=4)
+    except Exception as e:
+        print(f"保存指数文件时出错: {e}")
+
+
 def display_favorite_stocks(session, headers, favorites=None):
     """
     显示自选股的报价
@@ -377,32 +415,36 @@ def display_favorite_stocks(session, headers, favorites=None):
         favorites = load_favorites()
     
     all_stock_info = []
-    forex_notes = []
-    for symbol in favorites:
-        # 判断是否为加密货币
-        if is_crypto_symbol(symbol):
-            stock_info = get_crypto_info(symbol)
-        # 判断是否为外汇
-        elif is_forex_symbol(symbol):
-            stock_info = get_forex_info(symbol)
-            # 收集外汇提示信息
-            if stock_info and "Note" in stock_info:
-                forex_notes.append(f"{symbol}: {stock_info['Note']}")
-        else:
-            stock_info = get_stock_info(session, symbol, headers)
-            
-        if stock_info:
-            all_stock_info.append(stock_info)
-    
-    display_data = [{k: v for k, v in d.items() if k != 'Name' and k != 'Note'} for d in all_stock_info]
-    table = tabulate.tabulate(display_data, headers="keys", tablefmt="grid")
-    print(table)
-    
-    # 打印外汇提示信息
-    if forex_notes:
-        print("\n注意:")
-        for note in forex_notes:
-            print(f"  {note}")
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_symbol = {}
+        for symbol in favorites:
+            if is_crypto_symbol(symbol):
+                future = executor.submit(get_crypto_info, symbol)
+            elif is_forex_symbol(symbol):
+                future = executor.submit(get_forex_info, symbol)
+            else:
+                future = executor.submit(get_stock_info, session, symbol, headers)
+            future_to_symbol[future] = symbol
+
+        for future in as_completed(future_to_symbol):
+            try:
+                stock_info = future.result()
+                if stock_info and not stock_info.get("error"):
+                    all_stock_info.append(stock_info)
+                elif stock_info and stock_info.get("error"):
+                    print(f"错误: {stock_info['message']}")
+            except Exception as e:
+                symbol = future_to_symbol[future]
+                print(f"获取 {symbol} 数据时出错: {e}")
+
+    # 按原始顺序排序结果
+    symbol_order = {symbol: i for i, symbol in enumerate(favorites)}
+    all_stock_info.sort(key=lambda x: symbol_order.get(x.get('Symbol'), float('inf')))
+
+    if all_stock_info:
+        display_data = [{k: v for k, v in d.items() if k != 'Name' and k != 'Note'} for d in all_stock_info]
+        table = tabulate.tabulate(display_data, headers="keys", tablefmt="grid")
+        print(table)
 
 
 if __name__ == "__main__":
@@ -412,6 +454,8 @@ if __name__ == "__main__":
     elif "-v" in sys.argv or "--version" in sys.argv:
         display_version()
         sys.exit(0)
+
+    show_indexes = "-idx" in sys.argv or "--indexes" in sys.argv
     
     # 创建全局唯一的 Session 和 headers
     session = requests.Session()
@@ -435,7 +479,7 @@ if __name__ == "__main__":
                 except ValueError:
                     print("错误: -i 参数需要一个整数值")
                     sys.exit(1)
-            elif sys.argv[i] in ["-h", "--help"]:
+            elif sys.argv[i] in ["-h", "--help", "-v", "--version", "-idx", "--indexes"]:
                 i += 1
             elif sys.argv[i].startswith("-"):
                 # 处理未知参数
@@ -453,47 +497,43 @@ if __name__ == "__main__":
             
             if len(stock_symbols) > 0:
                 all_stock_info = []
-                forex_notes = []
-                for stock_symbol in stock_symbols:
-                    # 判断是否为加密货币
-                    if is_crypto_symbol(stock_symbol):
-                        stock_info = get_crypto_info(stock_symbol)
-                    # 判断是否为外汇
-                    elif is_forex_symbol(stock_symbol):
-                        stock_info = get_forex_info(stock_symbol)
-                        # 收集外汇提示信息
-                        if stock_info and "Note" in stock_info:
-                            forex_notes.append(f"{stock_symbol}: {stock_info['Note']}")
-                    else:
-                        # 主循环中调用 get_stock_info
-                        stock_info = get_stock_info(session, stock_symbol, headers)
-                        
-                    # 检查是否有错误信息
-                    if stock_info is None or (isinstance(stock_info, dict) and "error" in stock_info):
-                        # 显示错误信息并退出程序
-                        if stock_info and "message" in stock_info:
-                            print(stock_info["message"])
-                        elif stock_info is None:
-                            print(f"无法获取 {stock_symbol} 的数据")
+                with ThreadPoolExecutor(max_workers=10) as executor:
+                    future_to_symbol = {}
+                    for symbol in stock_symbols:
+                        if is_crypto_symbol(symbol):
+                            future = executor.submit(get_crypto_info, symbol)
+                        elif is_forex_symbol(symbol):
+                            future = executor.submit(get_forex_info, symbol)
                         else:
-                            print(f"无法获取 {stock_symbol} 的数据")
-                        sys.exit(1)
-                    elif stock_info:
-                        all_stock_info.append(stock_info)
+                            future = executor.submit(get_stock_info, session, symbol, headers)
+                        future_to_symbol[future] = symbol
+
+                    for future in as_completed(future_to_symbol):
+                        try:
+                            stock_info = future.result()
+                            if stock_info and not stock_info.get("error"):
+                                all_stock_info.append(stock_info)
+                            elif stock_info and stock_info.get("error"):
+                                print(f"错误: {stock_info['message']}")
+                        except Exception as e:
+                            symbol = future_to_symbol[future]
+                            print(f"获取 {symbol} 数据时出错: {e}")
+
+                # 按原始顺序排序结果
+                symbol_order = {symbol: i for i, symbol in enumerate(stock_symbols)}
+                all_stock_info.sort(key=lambda x: symbol_order.get(x.get('Symbol'), float('inf')))
 
                 if all_stock_info:
                     display_data = [{k: v for k, v in d.items() if k != 'Name' and k != 'Note'} for d in all_stock_info]
                     table = tabulate.tabulate(display_data, headers="keys", tablefmt="grid")
                     print(table)
-                    
-                    # 打印外汇提示信息
-                    if forex_notes:
-                        print("\n注意:")
-                        for note in forex_notes:
-                            print(f"  {note}")
 
             else:
-                display_favorite_stocks(session, headers)
+                if show_indexes:
+                    indexes = load_indexes()
+                    display_favorite_stocks(session, headers, favorites=indexes)
+                else:
+                    display_favorite_stocks(session, headers)
         
             print(f"\n")
 

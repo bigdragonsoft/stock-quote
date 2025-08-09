@@ -1,11 +1,10 @@
 {
     "stocks": [
+        "USDCNH",
         "SH513100",
         "SH513500",
         "SH513180",
-        "IBIT",
-        "USDCNH",
         "BTC",
-        "03032"
+        "IBIT"
     ]
 }

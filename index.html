@@ -88,8 +88,8 @@
         <p>提供命令行界面（CLI）和图形界面（GUI），满足不同使用场景的需求。</p>
       </div>
       <div class="feature-item">
-        <h3>自选管理</h3>
-        <p>自动生成并管理自选列表 (favorites.json)，便于长期追踪关注的股票或货币。</p>
+        <h3>列表管理</h3>
+        <p>支持自选股和指数列表切换。GUI 版可拖拽排序、增删自选股。</p>
       </div>
       <div class="feature-item">
         <h3>跨平台兼容</h3>
@@ -115,8 +115,11 @@
   <section id="使用">
     <h2>使用示例</h2>
     <h3>命令行模式（CLI）</h3>
-    <pre><code>python stock_quote.py SH513100 BTC USDJPY
-# 设置刷新间隔为 10 秒：
+    <pre><code># 查看自选股
+python stock_quote.py
+# 查看指数
+python stock_quote.py --indexes
+# 查看指定股票并设置刷新间隔
 python stock_quote.py -i 10 SH513100 BTC</code></pre>
 
     <h3>图形界面（GUI）</h3>
@@ -139,7 +142,8 @@ python stock_quote.py -i 10 SH513100 BTC</code></pre>
       <li><code>stock_quote.py</code> — 命令行查询主程序</li>
       <li><code>stock_quote_gui.py</code> — 图形界面程序</li>
       <li><code>requirements.txt</code> — 依赖列表</li>
-      <li><code>favorites.json</code> — 自动生成的自选数据文件</li>
+      <li><code>favorites.json</code> — 自动生成的自选股数据文件</li>
+      <li><code>indexes.json</code> — 自动生成的指数数据文件</li>
       <li><code>README.md / README_en.md</code> — 中英文说明</li>
       <li>截图文件，比如 <code>screenshot_cli.png</code>、<code>screenshot_gui.png</code></li>
     </ul>
