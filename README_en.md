@@ -38,7 +38,7 @@ This software is primarily designed for users who don't want to open trading sof
 | 03032    |      5.445  |  -0.08   | -1.45%    |
 +----------+-------------+----------+-----------+
 
-按 'Q' 键退出，或等待 25 秒后自动刷新...
+Press 'Q' to exit, press 'X' to toggle Favorites/Indexes, or wait 25 seconds to auto-refresh...
 ```
 
 ### Graphical User Interface
@@ -113,6 +113,7 @@ python stock_quote.py [options] [stock/forex/cryptocurrency codes...]
 #### Interaction
 
 - Press `q` key to exit the program at any time during runtime.
+- When no specific symbols are provided (i.e., using lists), press `x` to toggle between the Favorites watchlist and Index list.
 - Press `Ctrl+C` to terminate the program.
 
 ### Graphical User Interface

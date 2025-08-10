@@ -95,6 +95,7 @@ def display_help():
 
 在程序运行过程中:
   按 'q' 键退出程序
+  按 'x' 键在自选股与指数显示间切换
   按 Ctrl+C 也可以退出程序
     """
     print(help_text)
@@ -544,13 +545,16 @@ if __name__ == "__main__":
                 remaining_time = int(timeout - elapsed_time)
                 
                 # 输出剩余时间，'\r' 表示回到行首，end='' 防止换行
-                print(f"\r按 'Q' 键退出，或等待 {remaining_time} 秒后自动刷新...", end='', flush=True)
+                print(f"\r按 'Q' 退出，按 'X' 切换自选/指数，或等待 {remaining_time} 秒后自动刷新...", end='', flush=True)
                 
                 if keyboard.has_input():
                     char = keyboard.get_input()
                     if char == 'q':
                         print("\n\n退出程序...")
                         running = False
+                        break
+                    elif char == 'x':
+                        show_indexes = not show_indexes
                         break
                 time.sleep(0.1)
             # 在刷新前清除剩余时间显示

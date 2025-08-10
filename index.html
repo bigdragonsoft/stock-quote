@@ -5,58 +5,184 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Stock-Quote 项目介绍</title>
   <style>
+    :root {
+      --bg: #f5f7fa;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --surface: rgba(255, 255, 255, 0.65);
+      --border: rgba(0, 0, 0, 0.06);
+      --nav-bg: rgba(255, 255, 255, 0.6);
+      --primary: #2563eb;
+      --primary-2: #7c3aed;
+      --accent: #06b6d4;
+      --ring: rgba(37, 99, 235, 0.25);
+      --shadow: 0 10px 30px rgba(31, 41, 55, 0.08);
+    }
+
+    html[data-theme="dark"] {
+      --bg: #0b1020;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --surface: rgba(17, 25, 40, 0.55);
+      --border: rgba(255, 255, 255, 0.08);
+      --nav-bg: rgba(10, 15, 25, 0.55);
+      --primary: #60a5fa;
+      --primary-2: #a78bfa;
+      --accent: #22d3ee;
+      --ring: rgba(96, 165, 250, 0.25);
+      --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
     body {
       margin: 0;
-      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-      background: #f5f7fa;
-      color: #333;
-      line-height: 1.6;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background:
+        radial-gradient(600px circle at var(--mx, 50%) var(--my, 20%), rgba(37,99,235,0.10), transparent 60%),
+        radial-gradient(800px circle at 15% 10%, rgba(124,58,237,0.08), transparent 60%),
+        linear-gradient(180deg, var(--bg), var(--bg));
+      color: var(--text);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
     }
+
+    ::selection { background: rgba(37, 99, 235, 0.25); }
+
     header {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      position: relative;
       color: #fff;
-      padding: 40px 20px;
+      padding: 80px 20px 72px;
       text-align: center;
+      overflow: hidden;
+      background:
+        radial-gradient(800px circle at 20% -10%, rgba(124,58,237,0.35), transparent 40%),
+        radial-gradient(800px circle at 80% 0%, rgba(6,182,212,0.35), transparent 40%),
+        linear-gradient(135deg, #1d4ed8, #7c3aed 50%, #06b6d4);
     }
-    header h1 { margin: 0; font-size: 2.8rem; }
-    header p { margin: 10px 0 0; font-size: 1.2rem; }
+    header::before,
+    header::after {
+      content: "";
+      position: absolute;
+      width: 600px; height: 600px;
+      background: radial-gradient(closest-side, rgba(255,255,255,0.15), transparent);
+      filter: blur(40px);
+      opacity: 0.6;
+      transform: translate(-50%, -50%);
+      animation: float-slow 18s ease-in-out infinite;
+      pointer-events: none;
+    }
+    header::before { top: 10%; left: 10%; }
+    header::after  { top: 0%; right: -5%; animation-delay: -6s; }
+
+    header h1 {
+      margin: 0;
+      font-size: clamp(2.4rem, 5vw, 3.6rem);
+      letter-spacing: 0.4px;
+      text-shadow: 0 8px 35px rgba(0,0,0,0.35);
+    }
+    header p { margin: 14px auto 0; font-size: 1.15rem; max-width: 900px; opacity: 0.95; }
+
     nav {
-      display: flex; justify-content: center; gap: 20px;
-      padding: 15px 0; background: #eef1f5;
+      position: sticky; top: 0; z-index: 50;
+      display: flex; justify-content: center; align-items: center; gap: 22px;
+      padding: 10px 16px; backdrop-filter: saturate(140%) blur(10px);
+      background: var(--nav-bg);
+      border-bottom: 1px solid var(--border);
     }
     nav a {
-      color: #2563eb; text-decoration: none; font-weight: 600;
+      color: var(--primary); text-decoration: none; font-weight: 700; letter-spacing: 0.2px;
+      padding: 8px 10px; border-radius: 8px; position: relative;
+      transition: color .2s ease, background .2s ease, transform .2s ease;
     }
-    section { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+    nav a:hover { background: rgba(37,99,235,0.10); transform: translateY(-1px); }
+    nav a.active { color: var(--accent); }
+
+    .theme-toggle {
+      margin-left: 8px;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: transparent; color: var(--text);
+      border-radius: 999px; padding: 6px 10px; font-size: 16px;
+      transition: background .2s ease, transform .2s ease, box-shadow .2s ease;
+    }
+    .theme-toggle:hover { background: var(--surface); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
+
+    section { max-width: 1000px; margin: 44px auto; padding: 0 20px; }
+    section h2 { font-size: 1.8rem; margin-bottom: 14px; }
+
     .features {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px;
     }
     .feature-item {
-      background: #fff; padding: 20px; border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      position: relative;
+      background: var(--surface);
+      backdrop-filter: blur(10px);
+      padding: 20px; border-radius: 14px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      transform: translateY(0) scale(1);
+      transition: transform .25s ease, box-shadow .25s ease, background .25s ease;
     }
-    .feature-item h3 { margin-top: 0; color: #2563eb; }
+    .feature-item:hover { transform: translateY(-6px); box-shadow: 0 16px 45px rgba(0,0,0,0.15); }
+    .feature-item h3 { margin-top: 0; color: var(--primary); }
+
     pre {
-      background: #edf2f7; padding: 12px; overflow: auto; border-radius: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 14px 16px;
+      overflow: auto; box-shadow: var(--shadow);
     }
-    .cta { text-align: center; margin: 40px 0; }
-    .cta a {
-      display: inline-block; padding: 14px 24px; color: #fff;
-      background: #2563eb; border-radius: 6px;
-      text-decoration: none; font-size: 1.1rem; font-weight: 600;
+
+    .cta { text-align: center; margin: 54px 0 28px; }
+    .glow-button {
+      display: inline-block; padding: 14px 26px; color: #fff; text-decoration: none; font-size: 1.05rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--primary), var(--primary-2) 50%, var(--accent));
+      background-size: 200% 200%; border-radius: 999px; border: 0;
+      box-shadow: 0 10px 25px rgba(37,99,235,0.35), 0 0 0 1px rgba(255,255,255,0.12) inset;
+      transition: transform .2s ease, box-shadow .2s ease;
+      animation: gradientMove 6s ease infinite;
     }
+    .glow-button:hover { transform: translateY(-2px); box-shadow: 0 16px 35px rgba(37,99,235,0.45); }
+
     .screenshot-gallery {
       display: flex; flex-direction: column; gap: 20px; margin-top: 20px;
     }
     .screenshot-gallery img {
-      width: 100%; border-radius: 8px; border: 1px solid #ccc;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      width: 100%; border-radius: 14px; border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      transform: translateZ(0) scale(1);
+      transition: transform .25s ease, box-shadow .25s ease;
     }
+    .screenshot-gallery img:hover { transform: scale(1.02); box-shadow: 0 18px 50px rgba(0,0,0,0.18); }
+
+    .reveal { opacity: 0; transform: translateY(12px) scale(0.98); transition: opacity .5s ease, transform .6s cubic-bezier(.22,.61,.36,1); }
+    .reveal-visible { opacity: 1; transform: none; }
+
+    .back-to-top {
+      position: fixed; right: 22px; bottom: 26px; z-index: 60;
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 40px; height: 40px; border-radius: 999px;
+      background: var(--surface); color: var(--text);
+      border: 1px solid var(--border); box-shadow: var(--shadow);
+      cursor: pointer; opacity: 0; transform: translateY(10px) scale(0.95);
+      transition: opacity .25s ease, transform .25s ease, background .25s ease;
+      pointer-events: none;
+    }
+    .back-to-top.show { opacity: 1; transform: none; pointer-events: auto; }
+    .back-to-top:hover { background: rgba(255,255,255,0.85); }
+
     footer {
-      text-align: center; padding: 20px;
-      font-size: 0.9rem; color: #555; background: #eef1f5;
+      text-align: center; padding: 24px;
+      font-size: 0.95rem; color: var(--muted); background: var(--nav-bg);
+      border-top: 1px solid var(--border);
     }
+
+    @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    @keyframes float-slow { 0% { transform: translate(-50%, -50%) translateY(0); } 50% { transform: translate(-50%, -50%) translateY(25px); } 100% { transform: translate(-50%, -50%) translateY(0); } }
   </style>
+  <meta name="theme-color" content="#f5f7fa">
 </head>
 <body>
 
@@ -70,6 +196,7 @@
     <a href="#安装">快速上手</a>
     <a href="#使用">使用示例</a>
     <a href="#源码">查看源码</a>
+    <button id="themeToggle" class="theme-toggle" aria-label="切换主题">🌙</button>
   </nav>
 
   <section id="功能">
@@ -77,7 +204,7 @@
     <div class="features">
       <div class="feature-item">
         <h3>多市场支持</h3>
-        <p>支持查询 A 股、港股、美股、外汇 (如 USDJPY)、主流加密货币 (BTC、ETH ↓) 价格。</p>
+        <p>支持查询 A 股、港股、美股、外汇 (如 USDJPY)、主流加密货币 (BTC、ETH) 价格。</p>
       </div>
       <div class="feature-item">
         <h3>实时刷新</h3>
@@ -89,7 +216,7 @@
       </div>
       <div class="feature-item">
         <h3>列表管理</h3>
-        <p>支持自选股和指数列表切换。GUI 版可拖拽排序、增删自选股。</p>
+        <p>支持自选股和指数列表切换。CLI 运行时按 <code>X</code> 可在自选/指数间切换；GUI 版可拖拽排序、增删自选股。</p>
       </div>
       <div class="feature-item">
         <h3>跨平台兼容</h3>
@@ -117,10 +244,13 @@
     <h3>命令行模式（CLI）</h3>
     <pre><code># 查看自选股
 python stock_quote.py
+
 # 查看指数
 python stock_quote.py --indexes
+
 # 查看指定股票并设置刷新间隔
 python stock_quote.py -i 10 SH513100 BTC</code></pre>
+    <p>运行过程中：按 <code>Q</code> 退出；未指定个股代码时，可按 <code>X</code> 在自选/指数列表间切换显示。</p>
 
     <h3>图形界面（GUI）</h3>
     <pre><code>python stock_quote_gui.py</code></pre>
@@ -133,7 +263,7 @@ python stock_quote.py -i 10 SH513100 BTC</code></pre>
   </section>
 
   <div class="cta">
-    <a href="https://github.com/bigdragonsoft/stock-quote" target="_blank" rel="noopener">前往 GitHub 仓库 →</a>
+    <a class="glow-button" href="https://github.com/bigdragonsoft/stock-quote" target="_blank" rel="noopener">前往 GitHub 仓库 →</a>
   </div>
 
   <section id="源码">
@@ -149,9 +279,91 @@ python stock_quote.py -i 10 SH513100 BTC</code></pre>
     </ul>
   </section>
 
+  <button id="backToTop" class="back-to-top" aria-label="返回顶部">↑</button>
+
   <footer>
     © 2025 bigdragonsoft · 使用 Python, MIT 许可证 · 依赖雪球、新浪、528btc 数据源
   </footer>
+
+  <script>
+    (function() {
+      const root = document.documentElement;
+      const storageKey = 'sq-theme';
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+
+      function applyTheme(theme) {
+        root.setAttribute('data-theme', theme);
+        const btn = document.getElementById('themeToggle');
+        if (btn) {
+          btn.textContent = theme === 'dark' ? '☀️' : '🌙';
+          btn.setAttribute('aria-label', theme === 'dark' ? '切换为浅色' : '切换为深色');
+        }
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', theme === 'dark' ? '#0b1020' : '#f5f7fa');
+      }
+
+      const stored = localStorage.getItem(storageKey);
+      const initial = stored || 'light';
+      applyTheme(initial);
+
+      const toggle = document.getElementById('themeToggle');
+      toggle && toggle.addEventListener('click', function() {
+        const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        localStorage.setItem(storageKey, next);
+        applyTheme(next);
+      });
+
+      prefersDark.addEventListener('change', function(e) {
+        if (!localStorage.getItem(storageKey)) {
+          applyTheme(e.matches ? 'dark' : 'light');
+        }
+      });
+
+      // Scroll reveal
+      const revealEls = document.querySelectorAll('.feature-item, section h2, .screenshot-gallery img, pre, .cta');
+      const io = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('reveal-visible');
+            io.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12 });
+      revealEls.forEach(el => { el.classList.add('reveal'); io.observe(el); });
+
+      // Scroll spy for nav
+      const sections = Array.from(document.querySelectorAll('section[id]'));
+      const navLinks = Array.from(document.querySelectorAll('nav a[href^="#"]'));
+      function onScrollSpy() {
+        const fromTop = window.scrollY + 120;
+        let currentId = null;
+        for (const sec of sections) {
+          if (sec.offsetTop <= fromTop) currentId = sec.id;
+        }
+        navLinks.forEach(a => {
+          a.classList.toggle('active', a.getAttribute('href') === `#${currentId}`);
+        });
+      }
+      window.addEventListener('scroll', onScrollSpy, { passive: true });
+      onScrollSpy();
+
+      // Spotlight following cursor
+      window.addEventListener('mousemove', function(e) {
+        root.style.setProperty('--mx', e.clientX + 'px');
+        root.style.setProperty('--my', (e.clientY * 0.7) + 'px');
+      }, { passive: true });
+
+      // Back to top
+      const backTop = document.getElementById('backToTop');
+      window.addEventListener('scroll', function() {
+        if (window.scrollY > 400) backTop && backTop.classList.add('show');
+        else backTop && backTop.classList.remove('show');
+      }, { passive: true });
+      backTop && backTop.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    })();
+  </script>
 
 </body>
 </html>
