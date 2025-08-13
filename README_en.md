@@ -15,6 +15,7 @@ This software is primarily designed for users who don't want to open trading sof
 - **Favorites and Indexes**: Supports viewing both a user-defined watchlist and a fixed list of market indexes.
 - **List Management**: The GUI version supports drag-and-drop sorting, adding, and removing stocks from your watchlist.
 - **Cross-platform**: Supports Windows, macOS, and Linux systems.
+- **Error Logging**: Automatically logs data fetching errors to `stock_quote.log` for easier troubleshooting.
 
 ## Screenshots
 
@@ -199,9 +200,10 @@ The current version supports the following cryptocurrencies:
 
 ## Configuration Files
 
-The program uses the following JSON files for configuration, which are created automatically on the first run:
+The program uses the following files for configuration, which are created automatically on the first run:
 - `favorites.json`: Stores your personal watchlist, which can be edited through the GUI.
 - `indexes.json`: Stores a fixed list of market indexes. This list cannot be edited from the GUI but can be modified by editing the file directly.
+- `stock_quote.log`: Records any errors that occur during data fetching, which helps with troubleshooting.
 
 ## Dependencies
 

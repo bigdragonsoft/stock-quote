@@ -12,9 +12,23 @@ import platform
 import re
 import urllib3
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import logging
 
 # 禁用 InsecureRequestWarning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# 配置日志
+log_file = os.path.join(os.path.dirname(__file__), 'stock_quote.log')
+logging.basicConfig(
+    level=logging.ERROR,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filename=log_file,
+    filemode='a'
+)
+
+def log_error(symbol, data, error_message):
+    """记录错误到日志文件"""
+    logging.error(f"Error fetching data for {symbol}. Data: {data}. Error: {error_message}")
 
 
 class KeyboardInput:
@@ -159,6 +173,7 @@ def get_crypto_info(symbol):
     if symbol not in crypto_mapping:
         return {"error": "InvalidSymbol", "message": f"不支持的加密货币: {symbol}"}
     
+    html_content = ""
     try:
         url = f"https://www.528btc.com/coin/{crypto_mapping[symbol]['id']}/kline-24h"
         headers = {
@@ -178,7 +193,9 @@ def get_crypto_info(symbol):
         percent_match = re.search(r'<div id="rise_fall_percent"[^>]*>\+?([0-9]+\.?[0-9]*)\s*%', html_content)
         
         if not price_match:
-            return {"error": "ParsingError", "message": f"无法解析 {symbol} 的价格信息"}
+            error_message = f"无法解析 {symbol} 的价格信息"
+            log_error(symbol, html_content, error_message)
+            return {"error": "ParsingError", "message": error_message}
         
         # 处理价格中的逗号
         price_str = price_match.group(2)
@@ -212,17 +229,24 @@ def get_crypto_info(symbol):
         return crypto_info
         
     except requests.exceptions.RequestException as e:
-        return {"error": "NetworkError", "message": f"网络连接失败: {e}"}
+        error_message = f"网络连接失败: {e}"
+        log_error(symbol, "", error_message)
+        return {"error": "NetworkError", "message": error_message}
     except (ValueError, AttributeError) as e:
-        return {"error": "ParsingError", "message": f"解析数据失败: {e}"}
+        error_message = f"解析数据失败: {e}"
+        log_error(symbol, html_content, error_message)
+        return {"error": "ParsingError", "message": error_message}
     except Exception as e:
-        return {"error": "UnexpectedError", "message": f"发生未知错误: {e}"}
+        error_message = f"发生未知错误: {e}"
+        log_error(symbol, html_content, error_message)
+        return {"error": "UnexpectedError", "message": error_message}
 
 
 def get_forex_info(symbol):
     """
     从新浪财经获取外汇信息
     """
+    data_str = ""
     try:
         # 转换 symbol 格式, e.g., USDJPY -> fx_susdjpy
         if len(symbol) == 6:
@@ -245,14 +269,18 @@ def get_forex_info(symbol):
         # 格式: var hq_str_fx_susdjpy="..."
         data_str = response.text.strip()
         if not data_str.startswith("var"):
-            return {"error": "ParsingError", "message": f"Failed to parse data from sina for {symbol}"}
+            error_message = f"Failed to parse data from sina for {symbol}"
+            log_error(symbol, data_str, error_message)
+            return {"error": "ParsingError", "message": error_message}
         
         # 提取数据部分
         data_content = data_str.split('"')[1]
         data_fields = data_content.split(',')
         
         if len(data_fields) < 15:
-            return {"error": "ParsingError", "message": f"Insufficient data from sina for {symbol}"}
+            error_message = f"Insufficient data from sina for {symbol}"
+            log_error(symbol, data_content, error_message)
+            return {"error": "ParsingError", "message": error_message}
         
         #print(data_fields)  # 调试输出完整数据字段
         #exit()
@@ -275,12 +303,18 @@ def get_forex_info(symbol):
         return forex_info
         
     except requests.exceptions.RequestException as e:
-        return {"error": "NetworkError", "message": f"Network connection failed for {symbol}: {e}"}
+        error_message = f"Network connection failed for {symbol}: {e}"
+        log_error(symbol, "", error_message)
+        return {"error": "NetworkError", "message": error_message}
     except (AttributeError, ValueError, IndexError) as e:
         # Handle cases where selectors don't find the element or conversion fails
-        return {"error": "ParsingError", "message": f"Failed to parse data from sina for {symbol}. The site structure may have changed."}
+        error_message = f"Failed to parse data from sina for {symbol}. The site structure may have changed."
+        log_error(symbol, data_str, error_message)
+        return {"error": "ParsingError", "message": error_message}
     except Exception as e:
-        return {"error": "UnexpectedError", "message": f"An unexpected error occurred for {symbol}: {e}"}
+        error_message = f"An unexpected error occurred for {symbol}: {e}"
+        log_error(symbol, data_str, error_message)
+        return {"error": "UnexpectedError", "message": error_message}
 
 
 def get_stock_info(session, symbol, headers):
@@ -299,9 +333,11 @@ def get_stock_info(session, symbol, headers):
         "Referer": f"https://xueqiu.com/S/{symbol}"
     })
 
+    response_text = ""
     try:
         # 增加 verify=False 来绕过 SSL 验证
         response = session.get(url, headers=api_headers, verify=False)
+        response_text = response.text
         response.raise_for_status()
 
         data = response.json()
@@ -309,9 +345,9 @@ def get_stock_info(session, symbol, headers):
         quote = data.get("data", {}).get("quote", {})
         
         if not quote:
-            print(f"Could not find quote information for symbol: {symbol}")
-            print("Response from server:", response.text)
-            return None
+            error_message = f"Could not find quote information for symbol: {symbol}"
+            log_error(symbol, response_text, error_message)
+            return {"error": "ParsingError", "message": error_message}
 
         name = quote.get("name")
         current_price = quote.get("current")
@@ -330,14 +366,17 @@ def get_stock_info(session, symbol, headers):
 
     except requests.exceptions.RequestException as e:
         # 返回特定的错误信息
-        return {"error": "NetworkError", "message": f"Network connection failed: {e}"}
+        error_message = f"Network connection failed: {e}"
+        log_error(symbol, "", error_message)
+        return {"error": "NetworkError", "message": error_message}
     except json.JSONDecodeError:
-        print("Failed to parse JSON response.")
-        print("Response from server:", response.text)
-        return None
+        error_message = "Failed to parse JSON response."
+        log_error(symbol, response_text, error_message)
+        return {"error": "ParsingError", "message": error_message}
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        return None
+        error_message = f"An unexpected error occurred: {e}"
+        log_error(symbol, response_text, error_message)
+        return {"error": "UnexpectedError", "message": error_message}
 
 
 def load_favorites():
@@ -433,10 +472,10 @@ def display_favorite_stocks(session, headers, favorites=None):
                 if stock_info and not stock_info.get("error"):
                     all_stock_info.append(stock_info)
                 elif stock_info and stock_info.get("error"):
-                    print(f"错误: {stock_info['message']}")
+                    pass
             except Exception as e:
                 symbol = future_to_symbol[future]
-                print(f"获取 {symbol} 数据时出错: {e}")
+                log_error(symbol, "", f"获取 {symbol} 数据时出错: {e}")
 
     # 按原始顺序排序结果
     symbol_order = {symbol: i for i, symbol in enumerate(favorites)}
@@ -515,10 +554,10 @@ if __name__ == "__main__":
                             if stock_info and not stock_info.get("error"):
                                 all_stock_info.append(stock_info)
                             elif stock_info and stock_info.get("error"):
-                                print(f"错误: {stock_info['message']}")
+                                pass
                         except Exception as e:
                             symbol = future_to_symbol[future]
-                            print(f"获取 {symbol} 数据时出错: {e}")
+                            log_error(symbol, "", f"获取 {symbol} 数据时出错: {e}")
 
                 # 按原始顺序排序结果
                 symbol_order = {symbol: i for i, symbol in enumerate(stock_symbols)}

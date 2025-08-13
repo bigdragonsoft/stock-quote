@@ -15,6 +15,7 @@
 - **自选股与指数**：支持查看自选股和固定的指数列表。
 - **列表管理**：GUI 版本支持拖拽排序、添加和删除自选股。
 - **跨平台**：支持在 Windows, macOS 和 Linux 系统上运行。
+- **错误日志**：自动将数据获取错误记录到 `stock_quote.log` 文件中，方便排查问题。
 
 ## 界面截图
 
@@ -199,9 +200,10 @@ pyinstaller --onefile --windowed --name=StockQuoteGUI --icon=icon.ico stock_quot
 
 ## 配置文件
 
-程序使用以下 JSON 文件进行配置，首次运行时会自动创建：
+程序使用以下文件进行配置，首次运行时会自动创建：
 - `favorites.json`: 存储用户的自选股列表，可以通过 GUI 进行编辑。
 - `indexes.json`: 存储固定的指数列表，不可通过 GUI 编辑，但可以手动修改此文件。
+- `stock_quote.log`: 程序运行日志，用于调试和错误处理。
 
 ## 依赖
 

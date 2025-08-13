@@ -7,6 +7,20 @@ from tkinter import ttk, messagebox, scrolledtext
 import os
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import logging
+
+# 配置日志
+log_file = os.path.join(os.path.dirname(__file__), 'stock_quote.log')
+logging.basicConfig(
+    level=logging.ERROR,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filename=log_file,
+    filemode='a'
+)
+
+def log_error(symbol, data, error_message):
+    """记录错误到日志文件"""
+    logging.error(f"Error fetching data for {symbol}. Data: {data}. Error: {error_message}")
 
 
 class StockQuoteGUI:
@@ -89,7 +103,7 @@ class StockQuoteGUI:
                 self.save_favorites(default_favorites)
                 return default_favorites
         except Exception as e:
-            print(f"加载自选股文件时出错: {e}")
+            log_error("FAVORITES", "", f"Error loading favorites file: {e}")
             return ["SH513100", "SH513500", "SH513180", "IBIT"]
     
     def save_favorites(self, favorites):
@@ -101,7 +115,7 @@ class StockQuoteGUI:
             with open(favorites_file, 'w', encoding='utf-8') as f:
                 json.dump({'stocks': favorites}, f, ensure_ascii=False, indent=4)
         except Exception as e:
-            print(f"保存自选股文件时出错: {e}")
+            log_error("FAVORITES", "", f"Error saving favorites file: {e}")
 
     def load_indexes(self):
         """
@@ -123,7 +137,7 @@ class StockQuoteGUI:
                 self.save_indexes(default_indexes)
                 return default_indexes
         except Exception as e:
-            print(f"加载指数文件时出错: {e}")
+            log_error("INDEXES", "", f"Error loading indexes file: {e}")
             return []
 
     def save_indexes(self, indexes):
@@ -135,7 +149,7 @@ class StockQuoteGUI:
             with open(indexes_file, 'w', encoding='utf-8') as f:
                 json.dump({'indexes': indexes}, f, ensure_ascii=False, indent=4)
         except Exception as e:
-            print(f"保存指数文件时出错: {e}")
+            log_error("INDEXES", "", f"Error saving indexes file: {e}")
     
     def create_widgets(self):
         # 创建主框架
@@ -323,6 +337,7 @@ class StockQuoteGUI:
         if symbol not in crypto_mapping:
             return None
         
+        html_content = ""
         try:
             url = f"https://www.528btc.com/coin/{crypto_mapping[symbol]['id']}/kline-24h"
             headers = {
@@ -342,6 +357,7 @@ class StockQuoteGUI:
             percent_match = re.search(r'<div id="rise_fall_percent"[^>]*>\+?([0-9]+\.?[0-9]*)\s*%', html_content)
             
             if not price_match:
+                log_error(symbol, html_content, "Could not parse price information")
                 return None
             
             # 处理价格中的逗号
@@ -378,19 +394,20 @@ class StockQuoteGUI:
             return crypto_info
             
         except requests.exceptions.RequestException as e:
-            print(f"请求错误: {e}")
+            log_error(symbol, "", f"Request error: {e}")
             return None
-        except (ValueError, AttributeError) as e:
-            print(f"解析错误: {e}")
+        except json.JSONDecodeError:
+            log_error(symbol, response_text, "JSON parsing error")
             return None
         except Exception as e:
-            print(f"未知错误: {e}")
+            log_error(symbol, response_text, f"Unknown error: {e}")
             return None
 
     def get_forex_info(self, symbol):
         """
         从新浪财经获取外汇信息
         """
+        data_str = ""
         try:
             # 转换 symbol 格式, e.g., USDJPY -> fx_susdjpy
             if len(symbol) == 6:
@@ -413,6 +430,7 @@ class StockQuoteGUI:
             # 格式: var hq_str_fx_susdjpy="..."
             data_str = response.text.strip()
             if not data_str.startswith("var"):
+                log_error(symbol, data_str, "Failed to parse data from sina")
                 return None
             
             # 提取数据部分
@@ -420,6 +438,7 @@ class StockQuoteGUI:
             data_fields = data_content.split(',')
             
             if len(data_fields) < 15:
+                log_error(symbol, data_content, "Insufficient data from sina")
                 return None
             
             # 提取关键信息
@@ -442,13 +461,13 @@ class StockQuoteGUI:
             return forex_info
             
         except requests.exceptions.RequestException as e:
-            print(f"请求错误: {e}")
+            log_error(symbol, "", f"Request error: {e}")
             return None
         except (AttributeError, ValueError, IndexError) as e:
-            print(f"解析错误: {e}")
+            log_error(symbol, data_str, f"Parsing error: {e}")
             return None
         except Exception as e:
-            print(f"未知错误: {e}")
+            log_error(symbol, data_str, f"Unknown error: {e}")
             return None
     
     def get_stock_info(self, symbol):
@@ -463,6 +482,7 @@ class StockQuoteGUI:
         if self.is_forex_symbol(symbol):
             return self.get_forex_info(symbol)
         
+        response_text = ""
         try:
             # 为了获取必要的 cookie，我们首先访问股票页面
             headers = {
@@ -481,6 +501,7 @@ class StockQuoteGUI:
 
             # 发起 API 请求
             response = self.session.get(url, headers=api_headers)
+            response_text = response.text
             response.raise_for_status()
 
             data = response.json()
@@ -488,6 +509,7 @@ class StockQuoteGUI:
             market = data.get("data", {}).get("market", {})
             
             if not quote:
+                log_error(symbol, response_text, "Could not find quote information")
                 return None
 
             # 收集股票信息
@@ -504,13 +526,13 @@ class StockQuoteGUI:
             return stock_info
 
         except requests.exceptions.RequestException as e:
-            print(f"请求错误: {e}")
+            log_error(symbol, "", f"Request error: {e}")
             return None
         except json.JSONDecodeError:
-            print("JSON解析错误")
+            log_error(symbol, response_text, "JSON parsing error")
             return None
         except Exception as e:
-            print(f"未知错误: {e}")
+            log_error(symbol, response_text, f"Unknown error: {e}")
             return None
     
     def trigger_data_load(self):
@@ -543,7 +565,7 @@ class StockQuoteGUI:
                         all_stock_info.append(stock_info)
                 except Exception as e:
                     symbol = future_to_symbol[future]
-                    print(f"获取 {symbol} 数据时出错: {e}")
+                    log_error(symbol, "", f"Error getting data for {symbol}: {e}")
 
         # 按原始顺序排序结果
         symbol_order = {symbol: i for i, symbol in enumerate(self.current_stocks)}
@@ -847,7 +869,7 @@ class StockQuoteGUI:
                     self.root.iconbitmap(icon_path)
                     break
                 except Exception as e:
-                    print(f"无法设置图标 {icon_file}: {e}")
+                    log_error("ICON", icon_file, f"Could not set icon: {e}")
                     continue
 
 
