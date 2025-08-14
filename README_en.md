@@ -213,7 +213,7 @@ See the `requirements.txt` file for all dependencies.
 
 ### v1.1 (2025-08-14)
 
-- Fixed inconsistency in the forex code mapping table in the GUI version to ensure that forex data such as USDCNH and USDJPY can be displayed properly
+- Switched forex quotes data source from Sina Finance to Eastmoney.com
 
 ### v1.0 (2025-08-10)
 

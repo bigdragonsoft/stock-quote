@@ -182,7 +182,7 @@ pyinstaller --onefile --windowed --name=StockQuoteGUI --icon=icon.ico stock_quot
 
 ### v1.1 (2025-08-14)
 
-- 修复 GUI 版本中外汇代码映射表不一致问题，确保 USDCNH、USDJPY 等外汇数据能正常显示
+- 将新浪财经改用东方财富网获取外汇行情
 
 ### v1.0 (2025-08-10)
 
