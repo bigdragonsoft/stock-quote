@@ -77,11 +77,11 @@ class StockQuoteGUI:
         # 创建关于对话框
         about_text = """股票行情查看器
 
-版本: 1.0
+版本: 1.1
 作者: GuoQiang
 版权: Copyright (c) 2025
 
-这是一个命令行和图形界面的股票、外汇和加密货币报价查看工具。它可以从雪球获取股票数据，从新浪财经获取外汇数据，从528btc获取加密货币数据，并在图形界面中以表格形式展示。
+这是一个命令行和图形界面的股票、外汇和加密货币报价查看工具。它可以从雪球获取股票数据，从东方财富网获取外汇数据，从528btc获取加密货币数据，并在图形界面中以表格形式展示。
 
 项目地址: https://github.com/bigdragonsoft/stock-quote
 """
@@ -299,13 +299,31 @@ class StockQuoteGUI:
             self.edit_button.config(text="隐藏编辑")
             self.edit_frame_visible = True
 
+    # 外汇代码映射表
+    forex_code_map = {
+        "JPYUSD": {"secid": "119.JPYUSD", "name": "日元/美元"},
+        "USDCNH": {"secid": "133.USDCNH", "name": "美元/人民币"},
+        "EURUSD": {"secid": "119.EURUSD", "name": "欧元/美元"},
+        "GBPUSD": {"secid": "119.GBPUSD", "name": "英镑/美元"},
+        "AUDUSD": {"secid": "119.AUDUSD", "name": "澳元/美元"},
+        "USDJPY": {"secid": "119.USDJPY", "name": "美元/日元"},
+        "USDCHF": {"secid": "119.USDCHF", "name": "美元/瑞郎"},
+        "USDCAD": {"secid": "119.USDCAD", "name": "美元/加元"},
+        "USDHKD": {"secid": "119.USDHKD", "name": "美元/港币"},
+        "EURJPY": {"secid": "119.EURJPY", "name": "欧元/日元"},
+        "GBPJPY": {"secid": "119.GBPJPY", "name": "英镑/日元"}
+    }
+    
     def is_forex_symbol(self, symbol):
         """
         判断是否为外汇符号
         外汇符号格式如: USDCNH, USDJPY, EURUSD 等
         """
+        # 首先检查是否在映射表中
+        if symbol.upper() in self.forex_code_map:
+            return True
         # 外汇代码通常是6个字母组成，前3个是基础货币，后3个是报价货币
-        return bool(re.match(r'^[A-Z]{6}$', symbol))
+        return bool(re.match(r'^[A-Z]{6}$', symbol)) and symbol != "SH513100" and symbol != "SH513500" and symbol != "SH513180" and symbol != "IBIT"
     
     def is_crypto_symbol(self, symbol):
         """
@@ -403,72 +421,102 @@ class StockQuoteGUI:
             log_error(symbol, response_text, f"Unknown error: {e}")
             return None
 
-    def get_forex_info(self, symbol):
+    def get_eastmoney_forex_info(self, symbol):
         """
-        从新浪财经获取外汇信息
+        从东方财富网获取外汇信息
+        支持映射表中的外汇代码和通用的6位外汇代码
         """
-        data_str = ""
         try:
-            # 转换 symbol 格式, e.g., USDJPY -> fx_susdjpy
-            if len(symbol) == 6:
-                formatted_symbol = f"fx_s{symbol.lower()}"
+            symbol = symbol.upper()
+            
+            # 获取对应的secid
+            if symbol in self.forex_code_map:
+                # 使用预定义的secid
+                secid = self.forex_code_map[symbol]['secid']
+                name = self.forex_code_map[symbol]['name']
             else:
-                # 如果格式不正确，直接返回
-                return None
-
-            url = f"https://hq.sinajs.cn/list={formatted_symbol}"
+                # 对于不在映射表中的外汇代码，尝试构造通用的secid
+                # 大多数外汇使用119作为市场代码
+                secid = f"119.{symbol}"
+                # 构造一个通用的名称
+                if len(symbol) == 6:
+                    base_currency = symbol[:3]
+                    quote_currency = symbol[3:]
+                    name = f"{base_currency}/{quote_currency}"
+                else:
+                    name = symbol
             
             headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-                "Referer": "https://finance.sina.com.cn"
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+                'Referer': f'https://quote.eastmoney.com/forex/{symbol}.html'
             }
             
-            response = requests.get(url, headers=headers)
+            # 请求东方财富网外汇API
+            api_url = f"https://push2.eastmoney.com/api/qt/stock/get?secid={secid}&fields=f43,f44,f45,f46,f47,f48,f49,f50,f51,f52,f53,f54,f55,f56,f57,f58,f59,f60,f61,f170,f171,f168"
+            
+            response = requests.get(api_url, headers=headers, timeout=10)
             response.raise_for_status()
             
-            # 解析返回的数据
-            # 格式: var hq_str_fx_susdjpy="..."
-            data_str = response.text.strip()
-            if not data_str.startswith("var"):
-                log_error(symbol, data_str, "Failed to parse data from sina")
+            # 解析JSON数据
+            data = response.json()
+            
+            if data and 'data' in data and data['data'] is not None:
+                api_data = data['data']
+                
+                # 提取名称，如果API返回了名称则使用API的名称
+                if 'f58' in api_data and api_data['f58']:
+                    name = api_data.get('f58')
+                
+                # 提取当前价格 (f43)
+                current_price = None
+                if 'f43' in api_data and api_data['f43']:
+                    current_price = api_data['f43'] / 10000
+                
+                # 计算涨跌额 (f43 - f60)
+                change_amount = None
+                if 'f43' in api_data and 'f60' in api_data and api_data['f43'] and api_data['f60']:
+                    change_amount = (api_data['f43'] - api_data['f60']) / 10000
+                
+                # 提取涨跌幅 (f170)
+                change_percent = None
+                if 'f170' in api_data and api_data['f170']:
+                    change_percent = api_data['f170'] / 100  # 转换为百分比
+                
+                forex_info = {
+                    "Region": "FX",
+                    "Status": "-",
+                    "Name": name,
+                    "Symbol": symbol,
+                    "Price": current_price,
+                    "Change": change_amount,
+                    "Percent": f"{change_percent:.2f}%" if change_percent is not None else "0.00%"
+                }
+                
+                return forex_info
+            else:
+                # 如果不在映射表中且东方财富网没有数据，返回错误
+                error_message = f"未能获取到有效的数据: {symbol}"
+                log_error(symbol, str(data), error_message)
                 return None
-            
-            # 提取数据部分
-            data_content = data_str.split('"')[1]
-            data_fields = data_content.split(',')
-            
-            if len(data_fields) < 15:
-                log_error(symbol, data_content, "Insufficient data from sina")
-                return None
-            
-            # 提取关键信息
-            price = float(data_fields[8]) if data_fields[8] else 0  # 现汇买入价
-            change = float(data_fields[11]) if data_fields[11] else 0  # 涨跌额
-            # 使用现钞买入价作为基准计算涨跌百分比
-            base_price = float(data_fields[3]) if data_fields[3] else 1
-            change_percent = (change / base_price * 100) if base_price != 0 else 0
-            
-            forex_info = {
-                "Region": "FX",
-                "Status": "-",
-                "Name": data_fields[9],  # 货币名称
-                "Symbol": symbol,
-                "Price": price,
-                "Change": change,
-                "Percent": f"{change_percent:.4f}%"  # 保留小数点后4位
-            }
-            
-            return forex_info
-            
+                
         except requests.exceptions.RequestException as e:
-            log_error(symbol, "", f"Request error: {e}")
+            error_message = f"网络连接失败: {e}"
+            log_error(symbol, "", error_message)
             return None
-        except (AttributeError, ValueError, IndexError) as e:
-            log_error(symbol, data_str, f"Parsing error: {e}")
+        except json.JSONDecodeError as e:
+            error_message = f"解析JSON数据失败: {e}"
+            log_error(symbol, "", error_message)
             return None
         except Exception as e:
-            log_error(symbol, data_str, f"Unknown error: {e}")
+            error_message = f"发生未知错误: {e}"
+            log_error(symbol, "", error_message)
             return None
+
+    def get_forex_info(self, symbol):
+        """
+        获取外汇信息，使用东方财富网API
+        """
+        return self.get_eastmoney_forex_info(symbol)
     
     def get_stock_info(self, symbol):
         """

@@ -208,3 +208,15 @@ The program uses the following files for configuration, which are created automa
 ## Dependencies
 
 See the `requirements.txt` file for all dependencies.
+
+## Changelog
+
+### v1.1 (2025-08-14)
+
+- Fixed inconsistency in the forex code mapping table in the GUI version to ensure that forex data such as USDCNH and USDJPY can be displayed properly
+
+### v1.0 (2025-08-10)
+
+- Fixed compatibility issue with keyboard input listening in the command-line version on some Linux systems
+- Optimized error handling mechanism in the GUI version for enhanced program stability
+- Updated default watchlist with IBIT (iShares Bitcoin Trust ETF)
