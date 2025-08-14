@@ -17,6 +17,9 @@
       --accent: #06b6d4;
       --ring: rgba(37, 99, 235, 0.25);
       --shadow: 0 10px 30px rgba(31, 41, 55, 0.08);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
     }
 
     html[data-theme="dark"] {
@@ -31,6 +34,9 @@
       --accent: #22d3ee;
       --ring: rgba(96, 165, 250, 0.25);
       --shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      --success: #34d399;
+      --warning: #fbbf24;
+      --danger: #f87171;
     }
 
     * { box-sizing: border-box; }
@@ -90,14 +96,24 @@
       padding: 10px 16px; backdrop-filter: saturate(140%) blur(10px);
       background: var(--nav-bg);
       border-bottom: 1px solid var(--border);
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
     }
     nav a {
       color: var(--primary); text-decoration: none; font-weight: 700; letter-spacing: 0.2px;
-      padding: 8px 10px; border-radius: 8px; position: relative;
-      transition: color .2s ease, background .2s ease, transform .2s ease;
+      padding: 8px 16px; border-radius: 999px; position: relative;
+      transition: all .2s ease;
+      border: 1px solid transparent;
     }
-    nav a:hover { background: rgba(37,99,235,0.10); transform: translateY(-1px); }
-    nav a.active { color: var(--accent); }
+    nav a:hover { 
+      background: rgba(37,99,235,0.10); 
+      transform: translateY(-1px); 
+      border: 1px solid var(--primary);
+    }
+    nav a.active { 
+      color: white;
+      background: var(--primary);
+      border: 1px solid var(--primary);
+    }
 
     .theme-toggle {
       margin-left: 8px;
@@ -110,7 +126,22 @@
     .theme-toggle:hover { background: var(--surface); box-shadow: 0 8px 20px rgba(0,0,0,0.08); }
 
     section { max-width: 1000px; margin: 44px auto; padding: 0 20px; }
-    section h2 { font-size: 1.8rem; margin-bottom: 14px; }
+    section h2 { 
+      font-size: 1.8rem; 
+      margin-bottom: 14px; 
+      position: relative;
+      padding-bottom: 10px;
+    }
+    section h2::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 3px;
+    }
 
     .features {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px;
@@ -119,14 +150,30 @@
       position: relative;
       background: var(--surface);
       backdrop-filter: blur(10px);
-      padding: 20px; border-radius: 14px;
+      padding: 24px 20px 20px; border-radius: 14px;
       border: 1px solid var(--border);
       box-shadow: var(--shadow);
       transform: translateY(0) scale(1);
       transition: transform .25s ease, box-shadow .25s ease, background .25s ease;
     }
     .feature-item:hover { transform: translateY(-6px); box-shadow: 0 16px 45px rgba(0,0,0,0.15); }
-    .feature-item h3 { margin-top: 0; color: var(--primary); }
+    .feature-item h3 { 
+      margin-top: 0; 
+      color: var(--primary); 
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .feature-icon {
+      font-size: 1.4rem;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(37, 99, 235, 0.1);
+      border-radius: 10px;
+    }
 
     pre {
       background: var(--surface);
@@ -180,7 +227,22 @@
     }
 
     @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-    @keyframes float-slow { 0% { transform: translate(-50%, -50%) translateY(0); } 50% { transform: translate(-50%, -50%) translateY(25px); } 100% { transform: translate(-50%, -50%) translateY(0); } }
+    @keyframes float-slow { 0% { transform: translate(-50%, -50%) translateY(0); } 50% { transform: translate(-50%, -50%) translateY(25px); } 100% { transform: translate(-50%, -50%) translateY(0); }
+    
+    /* 添加响应式优化 */
+    @media (max-width: 768px) {
+      nav {
+        flex-wrap: wrap;
+      }
+      nav a {
+        padding: 6px 12px;
+        font-size: 0.9rem;
+      }
+      section {
+        margin: 30px auto;
+        padding: 0 15px;
+      }
+    }
   </style>
   <meta name="theme-color" content="#f5f7fa">
 </head>
@@ -203,31 +265,31 @@
     <h2>核心功能</h2>
     <div class="features">
       <div class="feature-item">
-        <h3>多市场支持</h3>
+        <h3><span class="feature-icon">🌍</span> 多市场支持</h3>
         <p>支持查询 A 股、港股、美股、外汇 (如 USDJPY)、主流加密货币 (BTC、ETH) 价格。</p>
       </div>
       <div class="feature-item">
-        <h3>实时刷新</h3>
+        <h3><span class="feature-icon">🔄</span> 实时刷新</h3>
         <p>可自定义刷新间隔，动态更新行情，适合即时跟踪。</p>
       </div>
       <div class="feature-item">
-        <h3>双界面支持</h3>
+        <h3><span class="feature-icon">🖥️</span> 双界面支持</h3>
         <p>提供命令行界面（CLI）和图形界面（GUI），满足不同使用场景的需求。</p>
       </div>
       <div class="feature-item">
-        <h3>列表管理</h3>
+        <h3><span class="feature-icon">📋</span> 列表管理</h3>
         <p>支持自选股和指数列表切换。CLI 运行时按 <code>X</code> 可在自选/指数间切换；GUI 版可拖拽排序、增删自选股。</p>
       </div>
       <div class="feature-item">
-        <h3>跨平台兼容</h3>
+        <h3><span class="feature-icon">💻</span> 跨平台兼容</h3>
         <p>在 Windows、macOS、Linux 上均可运行，使用 Python 开发。</p>
       </div>
       <div class="feature-item">
-        <h3>可打包执行</h3>
+        <h3><span class="feature-icon">📦</span> 可打包执行</h3>
         <p>支持使用 PyInstaller 打包为独立可执行文件，方便分享与部署。</p>
       </div>
       <div class="feature-item">
-        <h3>错误日志</h3>
+        <h3><span class="feature-icon">📝</span> 错误日志</h3>
         <p>自动记录数据获取过程中的错误到 <code>stock_quote.log</code>，便于排查问题。</p>
       </div>
     </div>
@@ -288,7 +350,7 @@ python stock_quote.py -i 10 SH513100 BTC</code></pre>
     <h2>更新日志</h2>
     <h3>v1.1 (2025-08-14)</h3>
     <ul>
-      <li>修复 GUI 版本中外汇代码映射表不一致问题，确保 USDCNH、USDJPY 等外汇数据能正常显示</li>
+      <li>将外汇行情数据源从新浪财经切换为东方财富网</li>
     </ul>
     
     <h3>v1.0 (2025-08-10)</h3>
@@ -302,7 +364,7 @@ python stock_quote.py -i 10 SH513100 BTC</code></pre>
   <button id="backToTop" class="back-to-top" aria-label="返回顶部">↑</button>
 
   <footer>
-    © 2025 bigdragonsoft · 使用 Python, MIT 许可证 · 依赖雪球、新浪、528btc 数据源
+    © 2025 bigdragonsoft · 使用 Python, MIT 许可证 · 依赖雪球、东方财富、528btc 数据源
   </footer>
 
   <script>
