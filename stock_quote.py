@@ -570,7 +570,7 @@ if __name__ == "__main__":
         while running:
             os.system('cls' if os.name == 'nt' else 'clear')
             
-            if len(stock_symbols) > 0:
+            if len(stock_symbols) > 0 and not show_indexes:
                 all_stock_info = []
                 with ThreadPoolExecutor(max_workers=10) as executor:
                     future_to_symbol = {}
