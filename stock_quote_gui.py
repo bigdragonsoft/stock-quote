@@ -576,6 +576,12 @@ class StockQuoteGUI:
                 "Change": quote.get("chg"),
                 "Percent": f"{quote.get('percent')}%"
             }
+
+            # Add extended hours data if available (for US stocks)
+            if quote.get("current_ext") is not None:
+                stock_info["extPrice"] = quote.get("current_ext")
+                stock_info["extChange"] = quote.get("chg_ext")
+                stock_info["extPercent"] = f'{quote.get("percent_ext")}%'
             
             return stock_info
 
@@ -647,6 +653,9 @@ class StockQuoteGUI:
             table_frame = ttk.Frame(self.scrollable_frame)
             table_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
             
+            # Check if any stock has extended data to decide if we need the extra columns.
+            has_ext_data = any("extPrice" in d for d in all_stock_info)
+
             # 定义列宽权重和最小宽度
             column_config = [
                 {"name": "Region", "weight": 1, "minsize": 60},
@@ -657,6 +666,17 @@ class StockQuoteGUI:
                 {"name": "Percent", "weight": 1, "minsize": 80},
                 {"name": "Name", "weight": 3, "minsize": 120}
             ]
+            if has_ext_data:
+                # Insert extended data after 'Name'
+                name_index = next((i for i, col in enumerate(column_config) if col["name"] == "Name"), -1)
+                if name_index != -1:
+                    ext_columns = [
+                        {"name": "extPrice", "weight": 1, "minsize": 80},
+                        {"name": "extChange", "weight": 1, "minsize": 80},
+                        {"name": "extPercent", "weight": 1, "minsize": 80},
+                    ]
+                    column_config = column_config[:name_index+1] + ext_columns + column_config[name_index+1:]
+
             
             # 创建表头
             headers = [col["name"] for col in column_config]
@@ -677,8 +697,7 @@ class StockQuoteGUI:
                     status_display = "-"
                 
                 # 显示每列数据
-                data_values = [stock.get('Region', '-'), status_display, stock.get('Symbol', '-'), 
-                              stock.get('Price', '-'), stock.get('Change', '-'), stock.get('Percent', '-'), stock.get('Name', '-')]
+                data_values = [stock.get(col['name'], '-') for col in column_config]
                 
                 for col, value in enumerate(data_values):
                     label = ttk.Label(table_frame, text=str(value), 

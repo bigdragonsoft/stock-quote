@@ -402,6 +402,12 @@ def get_stock_info(session, symbol, headers):
             "Change": change,
             "Percent": f"{percent_change}%"
         }
+        
+        # Add extended hours data if available (for US stocks)
+        if quote.get("current_ext") is not None:
+            stock_info["extPrice"] = quote.get("current_ext")
+            stock_info["extChange"] = quote.get("chg_ext")
+            stock_info["extPercent"] = f'{quote.get("percent_ext")}%'
  
         return stock_info
 
@@ -488,6 +494,29 @@ def save_indexes(indexes):
         print(f"保存指数文件时出错: {e}")
 
 
+def display_stock_table(stock_data):
+    """
+    Takes a list of stock info dictionaries and prints a formatted table.
+    """
+    if not stock_data:
+        return
+
+    # Check if any stock has extended data to decide if we need the extra columns.
+    has_ext_data = any("extPrice" in d for d in stock_data)
+    
+    headers = ["Symbol", "Price", "Change", "Percent"]
+    if has_ext_data:
+        headers.extend(["extPrice", "extChange", "extPercent"])
+        
+    # Create a header dict for tabulate to ensure column order and naming.
+    header_map = {h: h for h in headers}
+    
+    display_data = [{k: v for k, v in d.items() if k != 'Name' and k != 'Note'} for d in stock_data]
+
+    table = tabulate.tabulate(display_data, headers=header_map, tablefmt="grid")
+    print(table)
+
+
 def display_favorite_stocks(session, headers, favorites=None):
     """
     显示自选股的报价
@@ -522,10 +551,7 @@ def display_favorite_stocks(session, headers, favorites=None):
     symbol_order = {symbol: i for i, symbol in enumerate(favorites)}
     all_stock_info.sort(key=lambda x: symbol_order.get(x.get('Symbol'), float('inf')))
 
-    if all_stock_info:
-        display_data = [{k: v for k, v in d.items() if k != 'Name' and k != 'Note'} for d in all_stock_info]
-        table = tabulate.tabulate(display_data, headers="keys", tablefmt="grid")
-        print(table)
+    display_stock_table(all_stock_info)
 
 
 if __name__ == "__main__":
@@ -608,9 +634,7 @@ if __name__ == "__main__":
                     print("错误: 输入的代码为无效代码，请检查后重新输入。")
                     sys.exit(1)
                 
-                display_data = [{k: v for k, v in d.items() if k != 'Name' and k != 'Note'} for d in all_stock_info]
-                table = tabulate.tabulate(display_data, headers="keys", tablefmt="grid")
-                print(table)
+                display_stock_table(all_stock_info)
 
             else:
                 if show_indexes:
