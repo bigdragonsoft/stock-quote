@@ -79,7 +79,7 @@ class StockQuoteGUI:
 
 版本: 1.1
 作者: GuoQiang
-版权: Copyright (c) 2025
+版权: Copyright (c) 2025 BigDragonSoft
 
 这是一个命令行和图形界面的股票、外汇和加密货币报价查看工具。它可以从雪球获取股票数据，从东方财富网获取外汇数据，从528btc获取加密货币数据，并在图形界面中以表格形式展示。
 
@@ -372,7 +372,7 @@ class StockQuoteGUI:
             # 提取价格信息
             price_match = re.search(r'<i class="price_num word(Rise|Fall)">\$?([0-9,]+\.?[0-9]*)</i>', html_content)
             change_match = re.search(r'<span id="rise_fall_amount"[^>]*class="word(Rise|Fall)">([+-])\$?([0-9,]+\.?[0-9]*)</span>', html_content)
-            percent_match = re.search(r'<div id="rise_fall_percent"[^>]*>\+?([0-9]+\.?[0-9]*)\s*%', html_content)
+            percent_match = re.search(r'<div id="rise_fall_percent"[^>]*>([+-]?)(?:\s*)([0-9]+\.?[0-9]*)\s*%', html_content)
             
             if not price_match:
                 log_error(symbol, html_content, "Could not parse price information")
@@ -397,7 +397,13 @@ class StockQuoteGUI:
                     change = change_value
             
             if percent_match:
-                percent = float(percent_match.group(1))
+                # 正确处理正负号
+                sign = percent_match.group(1)  # '+' 或 '-'
+                percent_value = float(percent_match.group(2))
+                if sign == '-':
+                    percent = -percent_value
+                else:
+                    percent = percent_value
                 
             crypto_info = {
                 "Region": "CRYPTO",
