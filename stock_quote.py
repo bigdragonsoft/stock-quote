@@ -604,10 +604,13 @@ if __name__ == "__main__":
                 symbol_order = {symbol: i for i, symbol in enumerate(stock_symbols)}
                 all_stock_info.sort(key=lambda x: symbol_order.get(x.get('Symbol'), float('inf')))
 
-                if all_stock_info:
-                    display_data = [{k: v for k, v in d.items() if k != 'Name' and k != 'Note'} for d in all_stock_info]
-                    table = tabulate.tabulate(display_data, headers="keys", tablefmt="grid")
-                    print(table)
+                if not all_stock_info:
+                    print("错误: 输入的代码为无效代码，请检查后重新输入。")
+                    sys.exit(1)
+                
+                display_data = [{k: v for k, v in d.items() if k != 'Name' and k != 'Note'} for d in all_stock_info]
+                table = tabulate.tabulate(display_data, headers="keys", tablefmt="grid")
+                print(table)
 
             else:
                 if show_indexes:
