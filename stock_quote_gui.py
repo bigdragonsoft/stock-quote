@@ -2,6 +2,7 @@ import requests
 import json
 import threading
 import time
+import platform
 import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext
 import os
@@ -933,17 +934,28 @@ class StockQuoteGUI:
         """
         设置窗口图标
         """
-        # 尝试设置图标，支持多种可能的图标文件名
-        icon_files = ['icon.ico', 'stock_icon.ico', 'app_icon.ico', 'favicon.ico']
-        for icon_file in icon_files:
-            icon_path = os.path.join(os.path.dirname(__file__), icon_file)
-            if os.path.exists(icon_path):
-                try:
-                    self.root.iconbitmap(icon_path)
-                    break
-                except Exception as e:
-                    log_error("ICON", icon_file, f"Could not set icon: {e}")
-                    continue
+        icon_to_log = "icon"
+        try:
+            # 根据操作系统选择不同的图标设置方法
+            if platform.system() == "Windows":
+                # Windows 使用 .ico 文件
+                icon_files = ['icon.ico', 'stock_icon.ico']
+                for icon_file in icon_files:
+                    icon_to_log = icon_file
+                    icon_path = os.path.join(os.path.dirname(__file__), icon_file)
+                    if os.path.exists(icon_path):
+                        self.root.iconbitmap(icon_path)
+                        break
+            else:
+                # macOS 和 Linux 使用 PhotoImage
+                # 尝试使用 .png 文件
+                icon_to_log = 'icon.png'
+                png_icon_path = os.path.join(os.path.dirname(__file__), icon_to_log)
+                if os.path.exists(png_icon_path):
+                    photo = tk.PhotoImage(file=png_icon_path)
+                    self.root.iconphoto(False, photo)
+        except Exception as e:
+            log_error("ICON", icon_to_log, f"Could not set icon: {e}")
 
 
 def main():
