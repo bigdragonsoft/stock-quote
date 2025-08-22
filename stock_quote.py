@@ -400,14 +400,14 @@ def get_stock_info(session, symbol, headers):
             "Name": name,
             "Price": current_price,
             "Change": change,
-            "Percent": f"{percent_change}%"
+            "Percent": f"{percent_change:.2f}%"
         }
         
         # Add extended hours data if available (for US stocks)
         if quote.get("current_ext") is not None:
             stock_info["extPrice"] = quote.get("current_ext")
             stock_info["extChange"] = quote.get("chg_ext")
-            stock_info["extPercent"] = f'{quote.get("percent_ext")}%'
+            stock_info["extPercent"] = f'{quote.get("percent_ext"):.2f}%'
  
         return stock_info
 
