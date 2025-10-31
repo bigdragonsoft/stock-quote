@@ -2,7 +2,7 @@
 
 # Stock, Forex, and Cryptocurrency Quote Tool
 
-This is a command-line and graphical interface tool for viewing stock, forex, and cryptocurrency quotes. It retrieves stock data from Xueqiu, forex data from Sina Finance, and cryptocurrency data from 528btc, displaying them in tabular form in either the terminal or graphical interface.
+This is a command-line and graphical interface tool for viewing stock, forex, and cryptocurrency quotes. It retrieves stock data from Tencent, forex data from Sina Finance, and cryptocurrency data from 528btc, displaying them in tabular form in either the terminal or graphical interface.
 
 This software is primarily designed for users who don't want to open trading software or browse web pages to check market quotes. Through a simple terminal or graphical interface, users can quickly obtain the required market information without the hassle of opening heavy trading software or browsing the web.
 
@@ -196,8 +196,8 @@ The current version supports the following cryptocurrencies:
 
 ## Data Sources
 
-- **Stock Data**: From Xueqiu (xueqiu.com)
-- **Forex Data**: From Sina Finance (finance.sina.com.cn)
+- **Stock Data**: From Tencent (tencent.com)
+- **Forex Data**: From Eastmoney (eastmoney.com)
 - **Cryptocurrency Data**: From 528btc (528btc.com)
 
 ## Configuration Files
