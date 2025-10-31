@@ -12,6 +12,7 @@ import logging
 import pystray
 from PIL import Image, ImageTk
 import sys
+import keyboard
 
 # 配置日志
 log_file = os.path.join(os.path.dirname(__file__), 'stock_quote.log')
@@ -207,8 +208,8 @@ class StockQuoteGUI:
         tray_button = ttk.Button(control_frame, text="隐藏到托盘", command=self.minimize_to_tray)
         tray_button.pack(side=tk.RIGHT, padx=(0, 10))
         
-        # 为隐藏到托盘按钮绑定快捷键 Ctrl+Alt+Z
-        self.root.bind('<Control-Alt-z>', lambda event: self.minimize_to_tray())
+        # 设置全局快捷键
+        keyboard.add_hotkey('ctrl+alt+z', self.minimize_to_tray)
         
         # 创建编辑框架（默认隐藏）
         self.edit_frame = ttk.Frame(main_frame)

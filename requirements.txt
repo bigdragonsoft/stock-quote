@@ -3,3 +3,4 @@ requests>=2.25.1
 tabulate
 pystray
 pillow
+keyboard
