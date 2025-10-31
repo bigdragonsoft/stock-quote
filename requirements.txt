@@ -1,3 +1,5 @@
 # 项目依赖
 requests>=2.25.1
 tabulate
+pystray
+pillow

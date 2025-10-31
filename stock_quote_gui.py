@@ -9,6 +9,9 @@ import os
 import re
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
+import pystray
+from PIL import Image, ImageTk
+import sys
 
 # 配置日志
 log_file = os.path.join(os.path.dirname(__file__), 'stock_quote.log')
@@ -53,6 +56,11 @@ class StockQuoteGUI:
         # 控制刷新的标志
         self.refresh_active = False
         self.last_refresh_time = time.time()
+        
+        # 系统托盘相关
+        self.icon = None
+        self.is_minimized_to_tray = False
+        self.setup_tray_icon()
         
         # 创建界面
         self.create_widgets()
@@ -194,6 +202,13 @@ class StockQuoteGUI:
         # 手动刷新按钮
         refresh_button = ttk.Button(control_frame, text="刷新", command=self.load_stock_data)
         refresh_button.pack(side=tk.RIGHT, padx=(0, 10))
+        
+        # 隐藏到系统托盘按钮
+        tray_button = ttk.Button(control_frame, text="隐藏到托盘", command=self.minimize_to_tray)
+        tray_button.pack(side=tk.RIGHT, padx=(0, 10))
+        
+        # 为隐藏到托盘按钮绑定快捷键 Ctrl+Alt+Z
+        self.root.bind('<Control-Alt-z>', lambda event: self.minimize_to_tray())
         
         # 创建编辑框架（默认隐藏）
         self.edit_frame = ttk.Frame(main_frame)
@@ -915,7 +930,68 @@ class StockQuoteGUI:
         else:
             self.status_var.set(f"上次更新: {time.strftime('%H:%M:%S')} - 刷新间隔: {self.refresh_interval}秒")
     
+    def setup_tray_icon(self):
+        """
+        设置系统托盘图标
+        """
+        try:
+            # 尝试加载图标文件
+            icon_path = os.path.join(os.path.dirname(__file__), 'icon.ico')
+            if not os.path.exists(icon_path):
+                icon_path = os.path.join(os.path.dirname(__file__), 'stock_icon.ico')
+            
+            if os.path.exists(icon_path):
+                image = Image.open(icon_path)
+            else:
+                # 如果没有图标文件，创建一个简单的图标
+                image = Image.new('RGB', (64, 64), color = (73, 109, 137))
+            
+            # 创建托盘图标菜单
+            menu = (
+                pystray.MenuItem('显示', self.show_window),
+                pystray.MenuItem('退出', self.quit_app)
+            )
+            
+            # 创建托盘图标
+            self.icon = pystray.Icon("stock_quote", image, "股票行情查看器", menu)
+            
+            # 在单独的线程中运行托盘图标
+            threading.Thread(target=self.icon.run, daemon=True).start()
+            
+        except Exception as e:
+            log_error("TRAY_ICON", "", f"Error setting up tray icon: {e}")
+    
+    def minimize_to_tray(self):
+        """
+        最小化到系统托盘
+        """
+        self.root.withdraw()  # 隐藏窗口
+        self.is_minimized_to_tray = True
+    
+    def show_window(self, icon=None, item=None):
+        """
+        从系统托盘恢复窗口
+        """
+        self.root.deiconify()  # 显示窗口
+        self.root.lift()  # 将窗口提升到顶层
+        self.is_minimized_to_tray = False
+    
+    def quit_app(self, icon=None, item=None):
+        """
+        从系统托盘退出应用
+        """
+        if self.icon:
+            self.icon.stop()
+        self.refresh_active = False
+        self.root.destroy()
+    
     def on_closing(self):
+        """
+        窗口关闭事件处理
+        """
+        self.refresh_active = False
+        if self.icon:
+            self.icon.stop()
         self.root.destroy()
     
     def on_drag_start(self, event):
