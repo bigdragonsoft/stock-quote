@@ -360,64 +360,91 @@ def get_forex_info(symbol):
 
 def get_stock_info(session, symbol, headers):
     """
-    从雪球获取并显示股票信息。
-    使用传入的 session 和 headers。
+    从腾讯获取并显示股票信息。
     """
-    # 关键步骤：在请求 API 之前，先访问一次股票页面，以获取必要的 cookie
-    session.get(f"https://xueqiu.com/S/{symbol}", headers=headers, verify=False)
+    # 格式化 symbol
+    # 移除用户可能输入的美股后缀，以便统一处理
+    cleaned_symbol = re.sub(r'\.(OQ|N|AM)$', '', symbol.upper(), flags=re.IGNORECASE)
+    symbol_lower = cleaned_symbol.lower()
 
-    url = f"https://stock.xueqiu.com/v5/stock/quote.json?symbol={symbol}&extend=detail"
-    
-    api_headers = headers.copy()
-    api_headers.update({
-        "Host": "stock.xueqiu.com",
-        "Referer": f"https://xueqiu.com/S/{symbol}"
-    })
+    if symbol_lower.startswith(('sh', 'sz')):
+        market_symbol = symbol_lower
+    elif symbol_lower.startswith('.'): # 指数
+        market_symbol = f"s_us{symbol_lower}"
+    elif symbol_lower.startswith('hkhsi'):
+        market_symbol = "s_hkHSI"
+    elif symbol_lower.startswith('hkhstech'):
+        market_symbol = "s_hkHSTECH"
+    elif symbol_lower.startswith(('hk')):
+        market_symbol = f"rt_hk{symbol_lower[2:]}"
+    else: # 默认美股
+        market_symbol = f"us{cleaned_symbol.upper()}.OQ" # 默认纳斯达克
 
+    url = f"https://qt.gtimg.cn/q={market_symbol}"
     response_text = ""
     try:
-        # 增加 verify=False 来绕过 SSL 验证
-        response = session.get(url, headers=api_headers, verify=False)
+        response = session.get(url, headers=headers, verify=False)
         response_text = response.text
         response.raise_for_status()
 
-        data = response.json()
-        
-        quote = data.get("data", {}).get("quote", {})
-        
-        if not quote:
-            error_message = f"Could not find quote information for symbol: {symbol}"
-            log_error(symbol, response_text, error_message)
-            return {"error": "ParsingError", "message": error_message}
+        # 解析返回的字符串
+        data_part = response_text.split('=')[1].strip('"\n;')
+        if not data_part or "none" in data_part:
+             # 尝试其他美股市场
+            if not symbol_lower.startswith(('sh', 'sz', 'hk', '.')):
+                market_symbol = f"us{cleaned_symbol.upper()}.N" # 纽交所
+                data_part = response_text.split('=')[1].strip('"\n;')
+                if not data_part or "none" in data_part:
+                    market_symbol = f"us{symbol.upper()}.AM" # AMEX
+                    url = f"https://qt.gtimg.cn/q={market_symbol}"
+                    response = session.get(url, headers=headers, verify=False)
+                    response_text = response.text
+                    data_part = response_text.split('=')[1].strip('"\n;')
 
-        name = quote.get("name")
-        current_price = quote.get("current")
-        change = quote.get("chg")
-        percent_change = quote.get("percent")
+        if not data_part or "none" in data_part:
+            error_message = f"No data found for symbol: {symbol}"
+            log_error(symbol, response_text, error_message)
+            return {"error": "NoData", "message": error_message}
+
+        parts = data_part.split('~')
         
-        stock_info = {
-            "Symbol": symbol,
-            "Name": name,
-            "Price": current_price,
-            "Change": change,
-            "Percent": f"{percent_change:.2f}%"
-        }
+        stock_info = {}
+        if market_symbol.startswith('s_'): # 指数
+            stock_info = {
+                "Symbol": symbol,
+                "Name": parts[1],
+                "Price": float(parts[3]),
+                "Change": float(parts[4]),
+                "Percent": f"{float(parts[5]):.2f}%"
+            }
+        elif market_symbol.startswith('us'): # 美股
+            stock_info = {
+                "Symbol": symbol,
+                "Name": parts[1],
+                "Price": float(parts[3]),
+                "Change": float(parts[4]),
+                "Percent": f"{float(parts[5]):.2f}%",
+                "extPrice": float(parts[41]),
+                "extChange": float(parts[42]),
+                "extPercent": f"{float(parts[43]):.2f}%"
+            }
+        else: # A股/港股
+            stock_info = {
+                "Symbol": symbol,
+                "Name": parts[1],
+                "Price": float(parts[3]),
+                "Change": float(parts[31]),
+                "Percent": f"{float(parts[32]):.2f}%"
+            }
         
-        # Add extended hours data if available (for US stocks)
-        if quote.get("current_ext") is not None:
-            stock_info["extPrice"] = quote.get("current_ext")
-            stock_info["extChange"] = quote.get("chg_ext")
-            stock_info["extPercent"] = f'{quote.get("percent_ext"):.2f}%'
- 
         return stock_info
 
     except requests.exceptions.RequestException as e:
-        # 返回特定的错误信息
         error_message = f"Network connection failed: {e}"
         log_error(symbol, "", error_message)
         return {"error": "NetworkError", "message": error_message}
-    except json.JSONDecodeError:
-        error_message = "Failed to parse JSON response."
+    except (IndexError, ValueError) as e:
+        error_message = f"Failed to parse response: {e}"
         log_error(symbol, response_text, error_message)
         return {"error": "ParsingError", "message": error_message}
     except Exception as e:
@@ -569,8 +596,8 @@ if __name__ == "__main__":
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
-    # 第一次访问以获取 cookie
-    session.get("https://xueqiu.com", headers=headers, verify=False)
+    # 第一次访问以获取 cookie (腾讯接口不需要，但保留该结构)
+    # session.get("https://gu.qq.com", headers=headers, verify=False)
 
     keyboard = KeyboardInput()  # 初始化跨平台输入检测
     try:

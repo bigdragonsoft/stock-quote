@@ -527,7 +527,7 @@ class StockQuoteGUI:
     
     def get_stock_info(self, symbol):
         """
-        从雪球获取股票信息
+        从腾讯获取股票信息
         """
         # 判断是否为加密货币
         if self.is_crypto_symbol(symbol):
@@ -536,61 +536,109 @@ class StockQuoteGUI:
         # 判断是否为外汇
         if self.is_forex_symbol(symbol):
             return self.get_forex_info(symbol)
-        
+
+        # 格式化 symbol
+        symbol_lower = symbol.lower()
+        market_symbol = ""
+        market_type = ""
+        if symbol_lower.startswith(('sh', 'sz')):
+            market_symbol = symbol_lower
+            market_type = "A-Share"
+        elif symbol_lower.startswith('.'): # 指数
+            market_symbol = f"s_us{symbol_lower}"
+            market_type = "Index"
+        elif symbol_lower.startswith('hkhsi'):
+            market_symbol = "s_hkHSI"
+            market_type = "HK-Index"
+        elif symbol_lower.startswith('hkhstech'):
+            market_symbol = "s_hkHSTECH"
+            market_type = "HK-Index"
+        elif symbol_lower.startswith(('hk')):
+            market_symbol = f"rt_hk{symbol_lower[2:]}"
+            market_type = "HK-Share"
+        else: # 默认美股
+            market_symbol = f"us{symbol.upper()}.OQ" # 默认纳斯达克
+            market_type = "US-Share"
+
+        url = f"https://qt.gtimg.cn/q={market_symbol}"
         response_text = ""
         try:
-            # 为了获取必要的 cookie，我们首先访问股票页面
             headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36"
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+                "Referer": "https://gu.qq.com/"
             }
-            self.session.get(f"https://xueqiu.com/S/{symbol}", headers=headers)
-
-            url = f"https://stock.xueqiu.com/v5/stock/quote.json?symbol={symbol}&extend=detail"
-            
-            # 添加 API 请求头
-            api_headers = headers.copy()
-            api_headers.update({
-                "Host": "stock.xueqiu.com",
-                "Referer": f"https://xueqiu.com/S/{symbol}"
-            })
-
-            # 发起 API 请求
-            response = self.session.get(url, headers=api_headers)
+            response = self.session.get(url, headers=headers, verify=False)
             response_text = response.text
             response.raise_for_status()
 
-            data = response.json()
-            quote = data.get("data", {}).get("quote", {})
-            market = data.get("data", {}).get("market", {})
-            
-            if not quote:
-                log_error(symbol, response_text, "Could not find quote information")
+            # 解析返回的字符串
+            data_part = response_text.split('=')[1].strip('"\n;')
+            if not data_part or "none" in data_part:
+                 # 尝试其他美股市场
+                if market_type == "US-Share":
+                    market_symbol = f"us{symbol.upper()}.N" # 纽交所
+                    url = f"https://qt.gtimg.cn/q={market_symbol}"
+                    response = self.session.get(url, headers=headers, verify=False)
+                    response_text = response.text
+                    data_part = response_text.split('=')[1].strip('"\n;')
+                    if not data_part or "none" in data_part:
+                        market_symbol = f"us{symbol.upper()}.AM" # AMEX
+                        url = f"https://qt.gtimg.cn/q={market_symbol}"
+                        response = self.session.get(url, headers=headers, verify=False)
+                        response_text = response.text
+                        data_part = response_text.split('=')[1].strip('"\n;')
+
+            if not data_part or "none" in data_part:
+                log_error(symbol, response_text, f"No data found for symbol: {symbol}")
                 return None
 
-            # 收集股票信息
-            stock_info = {
-                "Region": market.get("region", "未知"),
-                "Status": market.get("status", "未知"),
-                "Name": quote.get("name", "未知"),
-                "Symbol": symbol,
-                "Price": quote.get("current"),
-                "Change": quote.get("chg"),
-                "Percent": f"{quote.get('percent'):.2f}%"
-            }
-
-            # Add extended hours data if available (for US stocks)
-            if quote.get("current_ext") is not None:
-                stock_info["extPrice"] = quote.get("current_ext")
-                stock_info["extChange"] = quote.get("chg_ext")
-                stock_info["extPercent"] = f'{quote.get("percent_ext"):.2f}%'
+            parts = data_part.split('~')
+            
+            stock_info = {}
+            if market_type in ["Index", "HK-Index"]:
+                stock_info = {
+                    "Region": "INDEX",
+                    "Status": "-",
+                    "Name": parts[1],
+                    "Symbol": symbol,
+                    "Price": float(parts[3]),
+                    "Change": float(parts[4]),
+                    "Percent": f"{float(parts[5]):.2f}%"
+                }
+            elif market_type == "US-Share":
+                status = "OPEN" if parts[0] == 'us' else "CLOSED"
+                stock_info = {
+                    "Region": "US",
+                    "Status": status,
+                    "Name": parts[1],
+                    "Symbol": symbol,
+                    "Price": float(parts[3]),
+                    "Change": float(parts[4]),
+                    "Percent": f"{float(parts[5]):.2f}%",
+                    "extPrice": float(parts[22]),
+                    "extChange": float(parts[23]),
+                    "extPercent": f"{float(parts[24]):.2f}%"
+                }
+            else: # A-Share / HK-Share
+                region = "SH" if symbol.startswith("SH") else "SZ" if symbol.startswith("SZ") else "HK"
+                status = "OPEN" # Placeholder
+                stock_info = {
+                    "Region": region,
+                    "Status": status,
+                    "Name": parts[1],
+                    "Symbol": symbol,
+                    "Price": float(parts[3]),
+                    "Change": float(parts[31]),
+                    "Percent": f"{float(parts[32]):.2f}%"
+                }
             
             return stock_info
 
         except requests.exceptions.RequestException as e:
             log_error(symbol, "", f"Request error: {e}")
             return None
-        except json.JSONDecodeError:
-            log_error(symbol, response_text, "JSON parsing error")
+        except (IndexError, ValueError) as e:
+            log_error(symbol, response_text, f"Parsing error: {e}")
             return None
         except Exception as e:
             log_error(symbol, response_text, f"Unknown error: {e}")
