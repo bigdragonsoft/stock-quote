@@ -378,7 +378,7 @@ def get_stock_info(session, symbol, headers):
     elif symbol_lower.startswith(('hk')):
         market_symbol = f"hk{symbol_lower[2:]}"
     else: # 默认美股
-        market_symbol = f"us{cleaned_symbol.upper()}.OQ" # 默认纳斯达克
+        market_symbol = f"us{cleaned_symbol.upper()}"
 
     url = f"https://qt.gtimg.cn/q={market_symbol}"
     response_text = ""
@@ -390,16 +390,9 @@ def get_stock_info(session, symbol, headers):
         # 解析返回的字符串
         data_part = response_text.split('=')[1].strip('"\n;')
         if not data_part or "none" in data_part:
-             # 尝试其他美股市场
-            if not symbol_lower.startswith(('sh', 'sz', 'hk', '.')):
-                market_symbol = f"us{cleaned_symbol.upper()}.N" # 纽交所
-                data_part = response_text.split('=')[1].strip('"\n;')
-                if not data_part or "none" in data_part:
-                    market_symbol = f"us{symbol.upper()}.AM" # AMEX
-                    url = f"https://qt.gtimg.cn/q={market_symbol}"
-                    response = session.get(url, headers=headers, verify=False)
-                    response_text = response.text
-                    data_part = response_text.split('=')[1].strip('"\n;')
+            error_message = f"No data found for symbol: {symbol}"
+            log_error(symbol, response_text, error_message)
+            return {"error": "NoData", "message": error_message}
 
         if not data_part or "none" in data_part:
             error_message = f"No data found for symbol: {symbol}"

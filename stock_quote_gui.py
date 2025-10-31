@@ -572,7 +572,7 @@ class StockQuoteGUI:
             market_symbol = f"hk{symbol_lower[2:]}"
             market_type = "HK-Share"
         else: # 默认美股
-            market_symbol = f"us{symbol.upper()}.OQ" # 默认纳斯达克
+            market_symbol = f"us{symbol.upper()}"
             market_type = "US-Share"
 
         url = f"https://qt.gtimg.cn/q={market_symbol}"
@@ -589,19 +589,8 @@ class StockQuoteGUI:
             # 解析返回的字符串
             data_part = response_text.split('=')[1].strip('"\n;')
             if not data_part or "none" in data_part:
-                 # 尝试其他美股市场
-                if market_type == "US-Share":
-                    market_symbol = f"us{symbol.upper()}.N" # 纽交所
-                    url = f"https://qt.gtimg.cn/q={market_symbol}"
-                    response = self.session.get(url, headers=headers, verify=False)
-                    response_text = response.text
-                    data_part = response_text.split('=')[1].strip('"\n;')
-                    if not data_part or "none" in data_part:
-                        market_symbol = f"us{symbol.upper()}.AM" # AMEX
-                        url = f"https://qt.gtimg.cn/q={market_symbol}"
-                        response = self.session.get(url, headers=headers, verify=False)
-                        response_text = response.text
-                        data_part = response_text.split('=')[1].strip('"\n;')
+                log_error(symbol, response_text, f"No data found for symbol: {symbol}")
+                return None
 
             if not data_part or "none" in data_part:
                 log_error(symbol, response_text, f"No data found for symbol: {symbol}")
@@ -628,8 +617,8 @@ class StockQuoteGUI:
                     "Name": parts[1],
                     "Symbol": symbol,
                     "Price": float(parts[3]),
-                    "Change": float(parts[4]),
-                    "Percent": f"{float(parts[5]):.2f}%",
+                    "Change": float(parts[31]),
+                    "Percent": f"{float(parts[32]):.2f}%",
                     "extPrice": float(parts[22]),
                     "extChange": float(parts[23]),
                     "extPercent": f"{float(parts[24]):.2f}%"
