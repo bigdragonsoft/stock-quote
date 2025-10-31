@@ -376,7 +376,7 @@ def get_stock_info(session, symbol, headers):
     elif symbol_lower.startswith('hkhstech'):
         market_symbol = "s_hkHSTECH"
     elif symbol_lower.startswith(('hk')):
-        market_symbol = f"rt_hk{symbol_lower[2:]}"
+        market_symbol = f"hk{symbol_lower[2:]}"
     else: # 默认美股
         market_symbol = f"us{cleaned_symbol.upper()}.OQ" # 默认纳斯达克
 

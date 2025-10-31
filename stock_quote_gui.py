@@ -569,7 +569,7 @@ class StockQuoteGUI:
             market_symbol = "s_hkHSTECH"
             market_type = "HK-Index"
         elif symbol_lower.startswith(('hk')):
-            market_symbol = f"rt_hk{symbol_lower[2:]}"
+            market_symbol = f"hk{symbol_lower[2:]}"
             market_type = "HK-Share"
         else: # 默认美股
             market_symbol = f"us{symbol.upper()}.OQ" # 默认纳斯达克
