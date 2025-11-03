@@ -31,7 +31,7 @@ def log_error(symbol, data, error_message):
 class StockQuoteGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("Stock-Quote 股票行情查看器")
+        self.root.title("带薪看盘")
         self.root.geometry("800x600")
         
         # 创建一个共享的 Session
@@ -50,6 +50,11 @@ class StockQuoteGUI:
         # 当前股票列表
         self.current_stocks = self.default_stocks.copy()
         self.current_mode = 'favorites'  # 'favorites' or 'indexes'
+        
+        # 盘前盘后数据开关
+        self.show_extended_data = tk.BooleanVar(value=True)
+        self.show_trading_only = tk.BooleanVar(value=False)
+        self.last_stock_data = []
         
         # 刷新间隔（秒）
         self.refresh_interval = 30
@@ -85,13 +90,15 @@ class StockQuoteGUI:
     
     def show_about(self):
         # 创建关于对话框
-        about_text = """股票行情查看器
+        about_text = """带薪看盘
 
-版本: 1.1
+版本: 1.2
 作者: GuoQiang
 版权: Copyright (c) 2025 BigDragonSoft
 
-这是一个命令行和图形界面的股票、外汇和加密货币报价查看工具。它可以从雪球获取股票数据，从东方财富网获取外汇数据，从528btc获取加密货币数据，并在图形界面中以表格形式展示。
+这是一款简洁好用的看盘小工具，可以帮你轻松关注股票、外汇和加密货币的行情。
+
+我们加了一些实用的小功能，比如可以自由显示或隐藏美股的盘前盘后价格，也可以一键筛选出还在交易的品种。希望这些功能能让你在看盘时更得心应手！
 
 项目地址: https://github.com/bigdragonsoft/stock-quote
 """
@@ -174,39 +181,53 @@ class StockQuoteGUI:
         self.status_var = tk.StringVar(value="就绪")
         self.remaining_time_var = tk.StringVar(value="")
         
-        # 编辑按钮
-        self.edit_button = ttk.Button(control_frame, text="管理股票", command=self.toggle_edit_frame)
-        self.edit_button.pack(side=tk.LEFT)
-        
+        # --- 左侧控件 ---
         # 自选股按钮
         self.favorites_button = ttk.Button(control_frame, text="显示自选股", command=self.show_favorites)
-        self.favorites_button.pack(side=tk.LEFT, padx=(10, 0))
+        self.favorites_button.pack(side=tk.LEFT, padx=(0, 5))
         
         # 指数按钮
         self.indexes_button = ttk.Button(control_frame, text="显示指数", command=self.show_indexes)
-        self.indexes_button.pack(side=tk.LEFT, padx=(10, 0))
+        self.indexes_button.pack(side=tk.LEFT, padx=(0, 5))
         
-        # 刷新间隔设置
-        ttk.Label(control_frame, text="刷新间隔(秒):").pack(side=tk.LEFT, padx=(10, 5))
-        self.interval_var = tk.StringVar(value=str(self.refresh_interval))
-        interval_spinbox = ttk.Spinbox(control_frame, from_=5, to=300, width=5, 
-                                      textvariable=self.interval_var, 
-                                      command=self.update_interval)
-        interval_spinbox.pack(side=tk.LEFT, padx=(0, 10))
-        # 绑定回车键事件，使输入后按回车也能更新时间间隔
-        interval_spinbox.bind('<Return>', lambda event: self.update_interval())
+        # 编辑按钮
+        self.edit_button = ttk.Button(control_frame, text="管理股票", command=self.toggle_edit_frame)
+        self.edit_button.pack(side=tk.LEFT, padx=(0, 10))
+        
+        # 盘前盘后数据开关
+        self.ext_data_button = ttk.Checkbutton(control_frame, text="显示盘前/盘后", 
+                                              variable=self.show_extended_data, 
+                                              command=self.update_gui_with_data)
+        self.ext_data_button.pack(side=tk.LEFT, padx=(10, 0))
+        
+        # 仅显示交易中开关
+        self.trading_only_button = ttk.Checkbutton(control_frame, text="仅显示交易中",
+                                                   variable=self.show_trading_only,
+                                                   command=self.update_gui_with_data)
+        self.trading_only_button.pack(side=tk.LEFT, padx=(10, 0))
+        
+        # --- 右侧控件 (反向打包) ---
+        # 隐藏到系统托盘按钮
+        tray_button = ttk.Button(control_frame, text="隐藏到托盘", command=self.minimize_to_tray)
+        tray_button.pack(side=tk.RIGHT, padx=(10, 0))
         
         # 开始/停止刷新按钮
         self.toggle_button = ttk.Button(control_frame, text="停止刷新", command=self.toggle_refresh)
         self.toggle_button.pack(side=tk.RIGHT)
         
         # 手动刷新按钮
-        refresh_button = ttk.Button(control_frame, text="刷新", command=self.load_stock_data)
+        refresh_button = ttk.Button(control_frame, text="刷新", command=self.trigger_data_load)
         refresh_button.pack(side=tk.RIGHT, padx=(0, 10))
         
-        # 隐藏到系统托盘按钮
-        tray_button = ttk.Button(control_frame, text="隐藏到托盘", command=self.minimize_to_tray)
-        tray_button.pack(side=tk.RIGHT, padx=(0, 10))
+        # 刷新间隔设置
+        self.interval_var = tk.StringVar(value=str(self.refresh_interval))
+        interval_spinbox = ttk.Spinbox(control_frame, from_=5, to=300, width=5, 
+                                      textvariable=self.interval_var, 
+                                      command=self.update_interval)
+        interval_spinbox.pack(side=tk.RIGHT, padx=(0, 5))
+        # 绑定回车键事件
+        interval_spinbox.bind('<Return>', lambda event: self.update_interval())
+        ttk.Label(control_frame, text="刷新间隔(秒):").pack(side=tk.RIGHT)
         
         # 设置全局快捷键
         keyboard.add_hotkey('ctrl+alt+z', self.minimize_to_tray)
@@ -662,8 +683,9 @@ class StockQuoteGUI:
         加载并显示股票数据（在后台线程中运行）
         """
         if not self.current_stocks:
+            self.last_stock_data = []
             # 在主线程中更新GUI
-            self.root.after(0, self.update_gui_with_data, [])
+            self.root.after(0, self.update_gui_with_data)
             return
         
         all_stock_info = []
@@ -685,13 +707,21 @@ class StockQuoteGUI:
         symbol_order = {symbol: i for i, symbol in enumerate(self.current_stocks)}
         all_stock_info.sort(key=lambda x: symbol_order.get(x['Symbol'], float('inf')))
 
+        # 保存最新数据
+        self.last_stock_data = all_stock_info
         # 在主线程中更新GUI
-        self.root.after(0, self.update_gui_with_data, all_stock_info)
+        self.root.after(0, self.update_gui_with_data)
 
-    def update_gui_with_data(self, all_stock_info):
+    def update_gui_with_data(self):
         """
         用获取到的数据更新GUI（在主线程中运行）
         """
+        all_stock_info = self.last_stock_data
+        
+        # 如果选中，则只显示交易中的数据
+        if self.show_trading_only.get():
+            all_stock_info = [stock for stock in all_stock_info if stock.get('Status') == "OPEN"]
+            
         # 清除现有内容
         for widget in self.scrollable_frame.winfo_children():
             widget.destroy()
@@ -708,7 +738,7 @@ class StockQuoteGUI:
             table_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
             
             # Check if any stock has extended data to decide if we need the extra columns.
-            has_ext_data = any("extPrice" in d for d in all_stock_info)
+            has_ext_data = self.show_extended_data.get() and any("extPrice" in d for d in all_stock_info)
 
             # 定义列宽权重和最小宽度
             column_config = [
@@ -867,7 +897,7 @@ class StockQuoteGUI:
             self.stock_listbox.insert(tk.END, stock)
         
         # 加载数据
-        self.load_stock_data()
+        self.trigger_data_load()
         
         # 更新状态栏
         self.update_status_bar("已加载指数列表")
@@ -890,7 +920,7 @@ class StockQuoteGUI:
             self.stock_listbox.insert(tk.END, stock)
         
         # 加载数据
-        self.load_stock_data()
+        self.trigger_data_load()
         
         # 更新状态栏
         self.update_status_bar("已加载自选股列表")
@@ -943,7 +973,7 @@ class StockQuoteGUI:
             )
             
             # 创建托盘图标
-            self.icon = pystray.Icon("stock_quote", image, "股票行情查看器", menu)
+            self.icon = pystray.Icon("stock_quote", image, "带薪看盘", menu)
             
             # 在单独的线程中运行托盘图标
             threading.Thread(target=self.icon.run, daemon=True).start()

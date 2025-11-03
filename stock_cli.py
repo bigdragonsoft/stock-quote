@@ -90,7 +90,7 @@ def display_help():
     显示程序帮助信息
     """
     help_text = """
-用法: python stock_quote.py [选项] [股票代码...]
+用法: python stock_cli.py [选项] [股票代码...]
 
 选项:
   -i <秒数>        指定刷新间隔秒数，默认为30秒
@@ -99,13 +99,13 @@ def display_help():
   -v, --version    显示版本信息
 
 示例:
-  python stock_quote.py              使用默认自选股并每30秒刷新
-  python stock_quote.py SH513100     查看指定股票并每30秒刷新
-  python stock_quote.py -i 10 SH513100 SH513500    每10秒刷新查看两个股票
-  python stock_quote.py USDJPY      查看美元兑日元汇率
-  python stock_quote.py BTC         查看比特币价格
-  python stock_quote.py ETH         查看以太坊价格
-  python stock_quote.py -h           显示此帮助信息
+  python stock_cli.py              使用默认自选股并每30秒刷新
+  python stock_cli.py SH513100     查看指定股票并每30秒刷新
+  python stock_cli.py -i 10 SH513100 SH513500    每10秒刷新查看两个股票
+  python stock_cli.py USDJPY      查看美元兑日元汇率
+  python stock_cli.py BTC         查看比特币价格
+  python stock_cli.py ETH         查看以太坊价格
+  python stock_cli.py -h           显示此帮助信息
 
 在程序运行过程中:
   按 'q' 键退出程序
@@ -360,25 +360,30 @@ def get_forex_info(symbol):
 
 def get_stock_info(session, symbol, headers):
     """
-    从腾讯获取并显示股票信息。
+    从腾讯获取股票信息
     """
     # 格式化 symbol
-    # 移除用户可能输入的美股后缀，以便统一处理
-    cleaned_symbol = re.sub(r'\.(OQ|N|AM)$', '', symbol.upper(), flags=re.IGNORECASE)
-    symbol_lower = cleaned_symbol.lower()
-
+    symbol_lower = symbol.lower()
+    market_symbol = ""
+    market_type = ""
     if symbol_lower.startswith(('sh', 'sz')):
         market_symbol = symbol_lower
+        market_type = "A-Share"
     elif symbol_lower.startswith('.'): # 指数
         market_symbol = f"s_us{symbol_lower}"
+        market_type = "Index"
     elif symbol_lower.startswith('hkhsi'):
         market_symbol = "s_hkHSI"
+        market_type = "HK-Index"
     elif symbol_lower.startswith('hkhstech'):
         market_symbol = "s_hkHSTECH"
+        market_type = "HK-Index"
     elif symbol_lower.startswith(('hk')):
         market_symbol = f"hk{symbol_lower[2:]}"
+        market_type = "HK-Share"
     else: # 默认美股
-        market_symbol = f"us{cleaned_symbol.upper()}"
+        market_symbol = f"us{symbol.upper()}"
+        market_type = "US-Share"
 
     url = f"https://qt.gtimg.cn/q={market_symbol}"
     response_text = ""
@@ -390,19 +395,13 @@ def get_stock_info(session, symbol, headers):
         # 解析返回的字符串
         data_part = response_text.split('=')[1].strip('"\n;')
         if not data_part or "none" in data_part:
-            error_message = f"No data found for symbol: {symbol}"
-            log_error(symbol, response_text, error_message)
-            return {"error": "NoData", "message": error_message}
-
-        if not data_part or "none" in data_part:
-            error_message = f"No data found for symbol: {symbol}"
-            log_error(symbol, response_text, error_message)
-            return {"error": "NoData", "message": error_message}
+            log_error(symbol, response_text, f"No data found for symbol: {symbol}")
+            return None
 
         parts = data_part.split('~')
         
         stock_info = {}
-        if market_symbol.startswith('s_'): # 指数
+        if market_type in ["Index", "HK-Index"]:
             stock_info = {
                 "Symbol": symbol,
                 "Name": parts[1],
@@ -410,18 +409,18 @@ def get_stock_info(session, symbol, headers):
                 "Change": float(parts[4]),
                 "Percent": f"{float(parts[5]):.2f}%"
             }
-        elif market_symbol.startswith('us'): # 美股
+        elif market_type == "US-Share":
             stock_info = {
                 "Symbol": symbol,
                 "Name": parts[1],
                 "Price": float(parts[3]),
-                "Change": float(parts[4]),
-                "Percent": f"{float(parts[5]):.2f}%",
-                "extPrice": float(parts[41]),
-                "extChange": float(parts[42]),
-                "extPercent": f"{float(parts[43]):.2f}%"
+                "Change": float(parts[31]),
+                "Percent": f"{float(parts[32]):.2f}%",
+                "extPrice": float(parts[22]),
+                "extChange": float(parts[23]),
+                "extPercent": f"{float(parts[24]):.2f}%"
             }
-        else: # A股/港股
+        else: # A-Share / HK-Share
             stock_info = {
                 "Symbol": symbol,
                 "Name": parts[1],
@@ -433,17 +432,14 @@ def get_stock_info(session, symbol, headers):
         return stock_info
 
     except requests.exceptions.RequestException as e:
-        error_message = f"Network connection failed: {e}"
-        log_error(symbol, "", error_message)
-        return {"error": "NetworkError", "message": error_message}
+        log_error(symbol, "", f"Request error: {e}")
+        return None
     except (IndexError, ValueError) as e:
-        error_message = f"Failed to parse response: {e}"
-        log_error(symbol, response_text, error_message)
-        return {"error": "ParsingError", "message": error_message}
+        log_error(symbol, response_text, f"Parsing error: {e}")
+        return None
     except Exception as e:
-        error_message = f"An unexpected error occurred: {e}"
-        log_error(symbol, response_text, error_message)
-        return {"error": "UnexpectedError", "message": error_message}
+        log_error(symbol, response_text, f"Unknown error: {e}")
+        return None
 
 
 def load_favorites():
@@ -589,8 +585,8 @@ if __name__ == "__main__":
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
-    # 第一次访问以获取 cookie (腾讯接口不需要，但保留该结构)
-    # session.get("https://gu.qq.com", headers=headers, verify=False)
+    # 第一次访问以获取 cookie
+    session.get("https://gu.qq.com", headers=headers, verify=False)
 
     keyboard = KeyboardInput()  # 初始化跨平台输入检测
     try:

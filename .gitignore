@@ -1,5 +1,8 @@
 __pycache__/stock_quote.cpython-313.pyc
 .venv/
+dist/
+build/
+__pycache__
 .DS_Store
 favorites.json
 indexes.json
@@ -8,3 +11,4 @@ untitled.py
 
 debug_hk_code.py
 test_hk_code.py
+*.spec
