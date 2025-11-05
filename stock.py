@@ -53,8 +53,8 @@ class StockQuoteGUI:
         self.current_mode = 'favorites'  # 'favorites' or 'indexes'
         
         # 盘前盘后数据开关
-        self.show_extended_data = tk.BooleanVar(value=True)
-        self.show_trading_only = tk.BooleanVar(value=False)
+        self.show_extended_data = tk.BooleanVar(value=False)
+        self.show_trading_only = tk.BooleanVar(value=True)
         self.last_stock_data = []
         
         # 刷新间隔（秒）
