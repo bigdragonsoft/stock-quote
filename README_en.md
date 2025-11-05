@@ -108,12 +108,12 @@ You can use PyInstaller to package the application into an executable file, whic
 2.  **Package the GUI Version**:
     ```bash
     # For Windows and macOS, the --windowed flag hides the terminal window
-    pyinstaller --onefile --windowed --name="WorkTimeStockWatcher" --icon=icon.ico stock.py
+    pyinstaller --onefile --windowed --add-data "favorites.json;." --add-data "indexes.json;." --name="WorkTimeStockWatcher" --icon=icon.ico stock.py
     ```
 
 3.  **Package the CLI Version**:
     ```bash
-    pyinstaller --onefile --name="stock_quote_cli" --icon=icon.ico stock_cli.py
+    pyinstaller --onefile --add-data "favorites.json;." --add-data "indexes.json;." --name="stock_quote_cli" --icon=icon.ico stock_cli.py
     ```
 
 4.  The executable file will be located in the `dist` directory after packaging.
@@ -126,7 +126,9 @@ You can use PyInstaller to package the application into an executable file, whic
 
 ## Configuration Files
 
-The program automatically creates and manages the following configuration files:
-- `favorites.json`: Stores your custom watchlist.
+The program now stores configuration files and logs in a folder named `.stock_quote` within your user's home directory (e.g., `C:\\Users\\YourUsername\\.stock_quote` on Windows). This ensures that your personal configurations (like your watchlist) are preserved even if you update or move the application.
+
+On its first run, the program will automatically create and manage the following files in that directory:
+- `favorites.json`: Stores your custom watchlist. You can directly edit this file to manage your stocks in bulk.
 - `indexes.json`: Stores the fixed list of market indexes.
 - `stock_quote.log`: Records errors that occur during runtime for troubleshooting.

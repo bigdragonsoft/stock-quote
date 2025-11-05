@@ -13,12 +13,32 @@ import re
 import urllib3
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
+import shutil
 
 # 禁用 InsecureRequestWarning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# --- 配置和路径管理 ---
+
+def get_app_data_dir():
+    """获取用户特定的应用数据目录，并确保它存在"""
+    home = os.path.expanduser("~")
+    app_data_dir = os.path.join(home, ".stock_quote")
+    os.makedirs(app_data_dir, exist_ok=True)
+    return app_data_dir
+
+def get_resource_path(relative_path):
+    """获取资源的绝对路径，无论是在开发环境还是在PyInstaller打包后"""
+    if hasattr(sys, '_MEIPASS'):
+        # PyInstaller创建的临时文件夹
+        base_path = sys._MEIPASS
+    else:
+        # 正常开发环境
+        base_path = os.path.abspath(os.path.dirname(__file__))
+    return os.path.join(base_path, relative_path)
+
 # 配置日志
-log_file = os.path.join(os.path.dirname(__file__), 'stock_quote.log')
+log_file = os.path.join(get_app_data_dir(), 'stock_quote.log')
 logging.basicConfig(
     level=logging.ERROR,
     format='%(asctime)s - %(levelname)s - %(message)s',
@@ -444,48 +464,53 @@ def get_stock_info(session, symbol, headers):
 
 def load_favorites():
     """
-    从文件加载自选股列表
+    从用户配置目录加载自选股列表。如果不存在，则从程序包中复制默认配置。
     """
-    favorites_file = os.path.join(os.path.dirname(__file__), 'favorites.json')
-    try:
-        if os.path.exists(favorites_file):
-            with open(favorites_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                return data.get('stocks', [])
-        else:
-            # 如果文件不存在，创建默认文件
+    user_favorites_path = os.path.join(get_app_data_dir(), 'favorites.json')
+    
+    if not os.path.exists(user_favorites_path):
+        try:
+            default_favorites_path = get_resource_path('favorites.json')
+            shutil.copy2(default_favorites_path, user_favorites_path)
+        except Exception as e:
+            log_error("FAVORITES", "", f"Failed to copy default favorites: {e}")
+            # 如果复制失败，使用一个硬编码的默认列表
             default_favorites = ["SH513100", "SH513500", "SH513180", "IBIT"]
             save_favorites(default_favorites)
             return default_favorites
-    except Exception as e:
-        print(f"加载自选股文件时出错: {e}")
-        return ["SH513100", "SH513500", "SH513180", "IBIT"]
 
+    try:
+        with open(user_favorites_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return data.get('stocks', [])
+    except Exception as e:
+        log_error("FAVORITES", "", f"Error loading user favorites file: {e}")
+        return ["SH513100", "SH513500", "SH513180", "IBIT"]
 
 def save_favorites(favorites):
     """
-    将自选股列表保存到文件
+    将自选股列表保存到用户配置目录。
     """
-    favorites_file = os.path.join(os.path.dirname(__file__), 'favorites.json')
+    favorites_file = os.path.join(get_app_data_dir(), 'favorites.json')
     try:
         with open(favorites_file, 'w', encoding='utf-8') as f:
             json.dump({'stocks': favorites}, f, ensure_ascii=False, indent=4)
     except Exception as e:
-        print(f"保存自选股文件时出错: {e}")
-
+        log_error("FAVORITES", "", f"Error saving favorites file: {e}")
 
 def load_indexes():
     """
-    从文件加载指数列表
+    从用户配置目录加载指数列表。如果不存在，则从程序包中复制默认配置。
     """
-    indexes_file = os.path.join(os.path.dirname(__file__), 'indexes.json')
-    try:
-        if os.path.exists(indexes_file):
-            with open(indexes_file, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-                return data.get('indexes', [])
-        else:
-            # 如果文件不存在，创建默认文件
+    user_indexes_path = os.path.join(get_app_data_dir(), 'indexes.json')
+
+    if not os.path.exists(user_indexes_path):
+        try:
+            default_indexes_path = get_resource_path('indexes.json')
+            shutil.copy2(default_indexes_path, user_indexes_path)
+        except Exception as e:
+            log_error("INDEXES", "", f"Failed to copy default indexes: {e}")
+            # 如果复制失败，使用一个硬编码的默认列表
             default_indexes = [
                 "SH000001", "SZ399001", "SZ399006", "SH000688",
                 "SH000016", "BJ899050", "HKHSI", "HKHSTECH",
@@ -493,21 +518,25 @@ def load_indexes():
             ]
             save_indexes(default_indexes)
             return default_indexes
-    except Exception as e:
-        print(f"加载指数文件时出错: {e}")
-        return []
 
+    try:
+        with open(user_indexes_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            return data.get('indexes', [])
+    except Exception as e:
+        log_error("INDEXES", "", f"Error loading user indexes file: {e}")
+        return []
 
 def save_indexes(indexes):
     """
-    将指数列表保存到文件
+    将指数列表保存到用户配置目录。
     """
-    indexes_file = os.path.join(os.path.dirname(__file__), 'indexes.json')
+    indexes_file = os.path.join(get_app_data_dir(), 'indexes.json')
     try:
         with open(indexes_file, 'w', encoding='utf-8') as f:
             json.dump({'indexes': indexes}, f, ensure_ascii=False, indent=4)
     except Exception as e:
-        print(f"保存指数文件时出错: {e}")
+        log_error("INDEXES", "", f"Error saving indexes file: {e}")
 
 
 def display_stock_table(stock_data):

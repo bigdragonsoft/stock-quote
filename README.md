@@ -108,12 +108,12 @@ python stock_cli.py [选项] [股票/外汇/加密货币代码...]
 2.  **打包 GUI 版本**:
     ```bash
     # 对于 Windows 和 macOS，--windowed 参数可以隐藏终端窗口
-    pyinstaller --onefile --windowed --name="带薪看盘" --icon=icon.ico stock.py
+    pyinstaller --onefile --windowed --add-data "favorites.json;." --add-data "indexes.json;." --name="带薪看盘" --icon=icon.ico stock.py
     ```
 
 3.  **打包 CLI 版本**:
     ```bash
-    pyinstaller --onefile --name="stock_quote_cli" --icon=icon.ico stock_cli.py
+    pyinstaller --onefile --add-data "favorites.json;." --add-data "indexes.json;." --name="stock_quote_cli" --icon=icon.ico stock_cli.py
     ```
 
 4.  打包完成后，可执行文件将位于 `dist` 目录中。
@@ -126,7 +126,9 @@ python stock_cli.py [选项] [股票/外汇/加密货币代码...]
 
 ## 配置文件
 
-程序会自动创建和管理以下配置文件：
-- `favorites.json`: 存储您的自选股列表。
+程序现在会将配置文件和日志存储在用户的主目录下的一个名为 `.stock_quote` 的文件夹中（例如，在 Windows 上是 `C:\\Users\\YourUsername\\.stock_quote`）。这样做的好处是，即使用户更新或移动了程序，其个人配置（如自选股列表）也能得以保留。
+
+程序首次运行时，会自动在该目录创建和管理以下文件：
+- `favorites.json`: 存储您的自选股列表。您可以直接编辑此文件来批量修改自选股。
 - `indexes.json`: 存储固定的指数列表。
 - `stock_quote.log`: 记录程序运行中的错误，方便排查问题。
