@@ -14,6 +14,7 @@ import urllib3
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import logging
 import shutil
+from datetime import datetime, time as dt_time
 
 # 禁用 InsecureRequestWarning
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -115,17 +116,20 @@ def display_help():
 选项:
   -i <秒数>        指定刷新间隔秒数，默认为30秒
   -idx, --indexes  显示指数列表而不是自选股
+  -e, --ext-data   显示美股盘前盘后价格
+  -t, --trading-only 仅显示正在交易中的市场行情
   -h, --help       显示此帮助信息并退出
   -v, --version    显示版本信息
 
 示例:
-  python stock_cli.py              使用默认自选股并每30秒刷新
-  python stock_cli.py SH513100     查看指定股票并每30秒刷新
+  python stock_cli.py               使用默认自选股并每30秒刷新
+  python stock_cli.py SH513100      查看指定股票并每30秒刷新
   python stock_cli.py -i 10 SH513100 SH513500    每10秒刷新查看两个股票
-  python stock_cli.py USDJPY      查看美元兑日元汇率
-  python stock_cli.py BTC         查看比特币价格
-  python stock_cli.py ETH         查看以太坊价格
-  python stock_cli.py -h           显示此帮助信息
+  python stock_cli.py USDJPY        查看美元兑日元汇率
+  python stock_cli.py BTC           查看比特币价格
+  python stock_cli.py ETH           查看以太坊价格
+  python stock_cli.py -t            显示正在交易的市场行情
+  python stock_cli.py -h            显示此帮助信息
 
 在程序运行过程中:
   按 'q' 键退出程序
@@ -141,11 +145,13 @@ def display_version():
     """
     version_text = """股票行情查看器
 
-版本: 1.1
+版本: 1.2
 作者: GuoQiang
 版权: Copyright (c) 2025 BigDragonSoft
 
-这是一个命令行和图形界面的股票、外汇和加密货币报价查看工具。它可以从雪球获取股票数据，从东方财富网获取外汇数据，从528btc获取加密货币数据，并在终端或图形界面中以表格形式展示。
+这是一款简洁好用的看盘小工具，可以帮你轻松关注股票、外汇和加密货币的行情。
+
+我们加了一些实用的小功能，比如可以自由显示或隐藏美股的盘前盘后价格，也可以一键筛选出还在交易的品种。希望这些功能能让你在看盘时更得心应手！
 
 项目地址: https://github.com/bigdragonsoft/stock-quote
 """
@@ -253,7 +259,8 @@ def get_crypto_info(symbol):
             "Name": crypto_mapping[symbol]['name'],
             "Price": price,
             "Change": change,
-            "Percent": f"{percent:.2f}%"
+            "Percent": f"{percent:.2f}%",
+            "Status": "-"
         }
         
         return crypto_info
@@ -348,7 +355,8 @@ def get_eastmoney_forex_info(symbol):
                 "Name": name,
                 "Price": current_price,
                 "Change": change_amount,
-                "Percent": f"{change_percent:.2f}%" if change_percent is not None else "0.00%"
+                "Percent": f"{change_percent:.2f}%" if change_percent is not None else "0.00%",
+                "Status": "-"
             }
             
             return forex_info
@@ -376,6 +384,53 @@ def get_forex_info(symbol):
     获取外汇信息，使用东方财富网API
     """
     return get_eastmoney_forex_info(symbol)
+
+
+def get_market_status(market):
+    """
+    根据当前时间判断市场状态
+    """
+    now = datetime.now()
+    weekday = now.weekday()  # Monday is 0 and Sunday is 6
+    
+    # Weekend
+    if weekday >= 5:
+        return "CLOSED"
+    
+    current_time = now.time()
+    
+    if market in ["SH", "SZ"]:  # A股市场
+        # A股交易时间:
+        # 上午: 9:30 - 11:30
+        # 下午: 13:00 - 15:00
+        morning_open = dt_time(9, 30)
+        morning_close = dt_time(11, 30)
+        afternoon_open = dt_time(13, 0)
+        afternoon_close = dt_time(15, 0)
+        
+        if (morning_open <= current_time <= morning_close) or \
+           (afternoon_open <= current_time <= afternoon_close):
+            return "OPEN"
+        else:
+            return "CLOSED"
+            
+    elif market == "HK":  # 港股市场
+        # 港股交易时间:
+        # 上午: 9:30 - 12:00
+        # 下午: 13:00 - 16:00
+        morning_open = dt_time(9, 30)
+        morning_close = dt_time(12, 0)
+        afternoon_open = dt_time(13, 0)
+        afternoon_close = dt_time(16, 0)
+        
+        if (morning_open <= current_time <= morning_close) or \
+           (afternoon_open <= current_time <= afternoon_close):
+            return "OPEN"
+        else:
+            return "CLOSED"
+    
+    # Default case
+    return "-"
 
 
 def get_stock_info(session, symbol, headers):
@@ -427,9 +482,11 @@ def get_stock_info(session, symbol, headers):
                 "Name": parts[1],
                 "Price": float(parts[3]),
                 "Change": float(parts[4]),
-                "Percent": f"{float(parts[5]):.2f}%"
+                "Percent": f"{float(parts[5]):.2f}%",
+                "Status": "-"
             }
         elif market_type == "US-Share":
+            status = "OPEN" if parts[0] == 'us' else "CLOSED"
             stock_info = {
                 "Symbol": symbol,
                 "Name": parts[1],
@@ -438,15 +495,19 @@ def get_stock_info(session, symbol, headers):
                 "Percent": f"{float(parts[32]):.2f}%",
                 "extPrice": float(parts[22]),
                 "extChange": float(parts[23]),
-                "extPercent": f"{float(parts[24]):.2f}%"
+                "extPercent": f"{float(parts[24]):.2f}%",
+                "Status": status
             }
         else: # A-Share / HK-Share
+            region = "SH" if symbol.startswith("SH") else "SZ" if symbol.startswith("SZ") else "HK"
+            status = get_market_status(region)
             stock_info = {
                 "Symbol": symbol,
                 "Name": parts[1],
                 "Price": float(parts[3]),
                 "Change": float(parts[31]),
-                "Percent": f"{float(parts[32]):.2f}%"
+                "Percent": f"{float(parts[32]):.2f}%",
+                "Status": status
             }
         
         return stock_info
@@ -539,7 +600,7 @@ def save_indexes(indexes):
         log_error("INDEXES", "", f"Error saving indexes file: {e}")
 
 
-def display_stock_table(stock_data):
+def display_stock_table(stock_data, show_ext_data=False):
     """
     Takes a list of stock info dictionaries and prints a formatted table.
     """
@@ -547,7 +608,7 @@ def display_stock_table(stock_data):
         return
 
     # Check if any stock has extended data to decide if we need the extra columns.
-    has_ext_data = any("extPrice" in d for d in stock_data)
+    has_ext_data = show_ext_data and any("extPrice" in d for d in stock_data)
     
     headers = ["Symbol", "Price", "Change", "Percent"]
     if has_ext_data:
@@ -556,13 +617,13 @@ def display_stock_table(stock_data):
     # Create a header dict for tabulate to ensure column order and naming.
     header_map = {h: h for h in headers}
     
-    display_data = [{k: v for k, v in d.items() if k != 'Name' and k != 'Note'} for d in stock_data]
+    display_data = [{k: v for k, v in d.items() if k != 'Name' and k != 'Note' and k != 'Status'} for d in stock_data]
 
     table = tabulate.tabulate(display_data, headers=header_map, tablefmt="grid")
     print(table)
 
 
-def display_favorite_stocks(session, headers, favorites=None):
+def display_favorite_stocks(session, headers, favorites=None, show_ext_data=False, show_trading_only=False):
     """
     显示自选股的报价
     """
@@ -596,7 +657,10 @@ def display_favorite_stocks(session, headers, favorites=None):
     symbol_order = {symbol: i for i, symbol in enumerate(favorites)}
     all_stock_info.sort(key=lambda x: symbol_order.get(x.get('Symbol'), float('inf')))
 
-    display_stock_table(all_stock_info)
+    if show_trading_only:
+        all_stock_info = [s for s in all_stock_info if s.get('Status') != "CLOSED"]
+
+    display_stock_table(all_stock_info, show_ext_data)
 
 
 if __name__ == "__main__":
@@ -608,6 +672,8 @@ if __name__ == "__main__":
         sys.exit(0)
 
     show_indexes = "-idx" in sys.argv or "--indexes" in sys.argv
+    show_ext_data = "--ext-data" in sys.argv or "-e" in sys.argv
+    show_trading_only = "--trading-only" in sys.argv or "-t" in sys.argv
     
     # 创建全局唯一的 Session 和 headers
     session = requests.Session()
@@ -631,7 +697,7 @@ if __name__ == "__main__":
                 except ValueError:
                     print("错误: -i 参数需要一个整数值")
                     sys.exit(1)
-            elif sys.argv[i] in ["-h", "--help", "-v", "--version", "-idx", "--indexes"]:
+            elif sys.argv[i] in ["-h", "--help", "-v", "--version", "-idx", "--indexes", "-e", "--ext-data", "-t", "--trading-only"]:
                 i += 1
             elif sys.argv[i].startswith("-"):
                 # 处理未知参数
@@ -675,18 +741,21 @@ if __name__ == "__main__":
                 symbol_order = {symbol: i for i, symbol in enumerate(stock_symbols)}
                 all_stock_info.sort(key=lambda x: symbol_order.get(x.get('Symbol'), float('inf')))
 
+                if show_trading_only:
+                    all_stock_info = [s for s in all_stock_info if s.get('Status') != "CLOSED"]
+
                 if not all_stock_info:
                     print("错误: 输入的代码为无效代码，请检查后重新输入。")
                     sys.exit(1)
                 
-                display_stock_table(all_stock_info)
+                display_stock_table(all_stock_info, show_ext_data)
 
             else:
                 if show_indexes:
                     indexes = load_indexes()
-                    display_favorite_stocks(session, headers, favorites=indexes)
+                    display_favorite_stocks(session, headers, favorites=indexes, show_ext_data=show_ext_data, show_trading_only=show_trading_only)
                 else:
-                    display_favorite_stocks(session, headers)
+                    display_favorite_stocks(session, headers, show_ext_data=show_ext_data, show_trading_only=show_trading_only)
         
             print(f"\n")
 

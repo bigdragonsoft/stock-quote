@@ -71,6 +71,8 @@ python stock_cli.py [options] [stock/forex/crypto codes...]
 
 -   `-i <seconds>`: Specify the refresh interval in seconds (default is 30).
 -   `-idx`, `--indexes`: Display the index list instead of the watchlist.
+-   `-e`, `--ext-data`: Display pre-market and post-market prices for US stocks.
+-   `-t`, `--trading-only`: Show only the symbols that are currently in their trading session.
 -   `-h`, `--help`: Show help information.
 -   `-v`, `--version`: Show version information.
 

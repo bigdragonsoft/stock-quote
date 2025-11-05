@@ -71,6 +71,8 @@ python stock_cli.py [选项] [股票/外汇/加密货币代码...]
 
 -   `-i <秒数>`: 指定刷新间隔的秒数，默认为 30 秒。
 -   `-idx`, `--indexes`: 显示指数列表而不是自选股。
+-   `-e`, `--ext-data`: 显示美股的盘前盘后价格。
+-   `-t`, `--trading-only`: 仅显示正在交易中的市场行情。
 -   `-h`, `--help`: 显示帮助信息。
 -   `-v`, `--version`: 显示版本信息。
 
@@ -108,7 +110,7 @@ python stock_cli.py [选项] [股票/外汇/加密货币代码...]
 2.  **打包 GUI 版本**:
     ```bash
     # 对于 Windows 和 macOS，--windowed 参数可以隐藏终端窗口
-    pyinstaller --onefile --windowed --add-data "favorites.json;." --add-data "indexes.json;." --name="带薪看盘" --icon=icon.ico stock.py
+    pyinstaller --onefile --windowed --add-data "favorites.json;." --add-data "indexes.json;." --name="stock" --icon=icon.ico stock.py
     ```
 
 3.  **打包 CLI 版本**:
