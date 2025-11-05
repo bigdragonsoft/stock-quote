@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stock-Quote 项目介绍</title>
+  <title>带薪看盘 - Stock-Quote 项目</title>
   <style>
     :root {
       --bg: #f5f7fa;
@@ -42,7 +42,7 @@
     * { box-sizing: border-box; }
     html { 
       scroll-behavior: smooth; 
-      scroll-padding-top: 85px; /* 添加这一行，解决导航栏遮挡标题的问题 */
+      scroll-padding-top: 85px;
     }
     body {
       margin: 0;
@@ -147,7 +147,7 @@
     }
 
     .features {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 22px;
     }
     .feature-item {
       position: relative;
@@ -159,7 +159,7 @@
       transform: translateY(0) scale(1);
       transition: transform .25s ease, box-shadow .25s ease, background .25s ease;
     }
-    .feature-item:hover { transform: translateY(-6px); box-shadow: 0 16px 45px rgba(0,0,0,0.15); }
+    .feature-item:hover { transform: translateY(-6px); box-shadow: 0 16px 45px rgba(31, 41, 55, 0.15); }
     .feature-item h3 { 
       margin-top: 0; 
       color: var(--primary); 
@@ -184,6 +184,7 @@
       border-radius: 12px; padding: 14px 16px;
       overflow: auto; box-shadow: var(--shadow);
     }
+    code { font-family: "SF Mono", "Fira Code", "Consolas", monospace; }
 
     .cta { text-align: center; margin: 54px 0 28px; }
     .glow-button {
@@ -205,7 +206,7 @@
       transform: translateZ(0) scale(1);
       transition: transform .25s ease, box-shadow .25s ease;
     }
-    .screenshot-gallery img:hover { transform: scale(1.02); box-shadow: 0 18px 50px rgba(0,0,0,0.18); }
+    .screenshot-gallery img:hover { transform: scale(1.02); box-shadow: 0 18px 50px rgba(31, 41, 55, 0.18); }
 
     .reveal { opacity: 0; transform: translateY(12px) scale(0.98); transition: opacity .5s ease, transform .6s cubic-bezier(.22,.61,.36,1); }
     .reveal-visible { opacity: 1; transform: none; }
@@ -230,21 +231,12 @@
     }
 
     @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-    @keyframes float-slow { 0% { transform: translate(-50%, -50%) translateY(0); } 50% { transform: translate(-50%, -50%) translateY(25px); } 100% { transform: translate(-50%, -50%) translateY(0); }
+    @keyframes float-slow { 0% { transform: translate(-50%, -50%) translateY(0); } 50% { transform: translate(-50%, -50%) translateY(25px); } 100% { transform: translate(-50%, -50%) translateY(0); } }
     
-    /* 添加响应式优化 */
     @media (max-width: 768px) {
-      nav {
-        flex-wrap: wrap;
-      }
-      nav a {
-        padding: 6px 12px;
-        font-size: 0.9rem;
-      }
-      section {
-        margin: 30px auto;
-        padding: 0 15px;
-      }
+      nav { flex-wrap: wrap; }
+      nav a { padding: 6px 12px; font-size: 0.9rem; }
+      section { margin: 30px auto; padding: 0 15px; }
     }
   </style>
   <meta name="theme-color" content="#f5f7fa">
@@ -252,14 +244,15 @@
 <body>
 
   <header>
-    <h1>Stock-Quote</h1>
-    <p>一个简洁实用的命令行 + 图形界面行情查询工具（股票・外汇・加密货币）</p>
+    <h1>带薪看盘 (Stock-Quote)</h1>
+    <p>一款为上班族和极客打造的行情工具，支持股票、外汇、加密货币，提供 GUI 和 CLI 双模式。</p>
   </header>
 
   <nav>
     <a href="#功能">核心功能</a>
     <a href="#安装">快速上手</a>
     <a href="#使用">使用示例</a>
+    <a href="#打包">程序打包</a>
     <a href="#源码">查看源码</a>
     <button id="themeToggle" class="theme-toggle" aria-label="切换主题">🌙</button>
   </nav>
@@ -268,32 +261,28 @@
     <h2>核心功能</h2>
     <div class="features">
       <div class="feature-item">
-        <h3><span class="feature-icon">🌍</span> 多市场支持</h3>
-        <p>支持查询 A 股、港股、美股、外汇 (如 USDJPY)、主流加密货币 (BTC、ETH) 价格。</p>
+        <h3><span class="feature-icon">🖥️</span> GUI + CLI 双模式</h3>
+        <p>提供功能丰富的图形界面 (带薪看盘) 和轻量高效的命令行界面，满足不同场景需求。</p>
       </div>
       <div class="feature-item">
-        <h3><span class="feature-icon">🔄</span> 实时刷新</h3>
-        <p>可自定义刷新间隔，动态更新行情，适合即时跟踪。</p>
+        <h3><span class="feature-icon">🌍</span> 多市场行情</h3>
+        <p>支持 A 股、港股、美股，以及主流外汇 (USDJPY) 和加密货币 (BTC, ETH) 的实时报价。</p>
       </div>
       <div class="feature-item">
-        <h3><span class="feature-icon">🖥️</span> 双界面支持</h3>
-        <p>提供命令行界面（CLI）和图形界面（GUI），满足不同使用场景的需求。</p>
+        <h3><span class="feature-icon">⚙️</span> 高级数据显示</h3>
+        <p>GUI 和 CLI 均支持显示美股盘前/盘后价格，并可一键筛选出仍在交易中的品种。</p>
       </div>
       <div class="feature-item">
         <h3><span class="feature-icon">📋</span> 列表管理</h3>
-        <p>支持自选股和指数列表切换。CLI 运行时按 <code>X</code> 可在自选/指数间切换；GUI 版可拖拽排序、增删自选股。</p>
+        <p>支持自选股和指数列表切换。GUI 版可拖拽排序、增删自选股，配置自动保存。</p>
       </div>
       <div class="feature-item">
         <h3><span class="feature-icon">💻</span> 跨平台兼容</h3>
-        <p>在 Windows、macOS、Linux 上均可运行，使用 Python 开发。</p>
+        <p>基于 Python 开发，可在 Windows、macOS、Linux 上无缝运行。</p>
       </div>
       <div class="feature-item">
         <h3><span class="feature-icon">📦</span> 可打包执行</h3>
-        <p>支持使用 PyInstaller 打包为独立可执行文件，方便分享与部署。</p>
-      </div>
-      <div class="feature-item">
-        <h3><span class="feature-icon">📝</span> 错误日志</h3>
-        <p>自动记录数据获取过程中的错误到 <code>stock_quote.log</code>，便于排查问题。</p>
+        <p>支持使用 PyInstaller 打包为独立可执行文件，方便在无 Python 环境的电脑上使用。</p>
       </div>
     </div>
   </section>
@@ -310,24 +299,28 @@
 
   <section id="使用">
     <h2>使用示例</h2>
-    <h3>命令行模式（CLI）</h3>
-    <pre><code># 查看自选股
-python stock_quote.py
-
-# 查看指数
-python stock_quote.py --indexes
-
-# 查看指定股票并设置刷新间隔
-python stock_quote.py -i 10 SH513100 BTC</code></pre>
-    <p>运行过程中：按 <code>Q</code> 退出；未指定个股代码时，可按 <code>X</code> 在自选/指数列表间切换显示。</p>
-
-    <h3>图形界面（GUI）</h3>
-    <pre><code>python stock_quote_gui.py</code></pre>
-    <p>启动 GUI，即可通过可视界面管理自选、设置刷新、手动刷新等。</p>
-
+    <h3>图形界面 (GUI)</h3>
+    <pre><code>python stock.py</code></pre>
+    <p>启动“带薪看盘”图形界面，所有操作均在窗口内完成，如管理自选股、切换显示模式、设置刷新间隔等。</p>
     <div class="screenshot-gallery">
       <img src="screenshot_gui.png" alt="Stock-Quote GUI 界面截图">
+    </div>
+    
+    <h3 style="margin-top: 30px;">命令行模式 (CLI)</h3>
+    <pre><code># 查看默认自选股
+python stock_cli.py
 
+# 查看指数
+python stock_cli.py --indexes
+
+# 查看指定股票，显示盘前盘后价格，并设置10秒刷新
+python stock_cli.py -e -i 10 NVDA AAPL
+
+# 仅看正在交易的品种
+python stock_cli.py -t</code></pre>
+    <p>运行过程中：按 <code>Q</code> 退出；未指定代码时，可按 <code>X</code> 在自选/指数列表间切换。</p>
+    <div class="screenshot-gallery">
+      <img src="screenshot_cli.png" alt="Stock-Quote CLI 界面截图">
     </div>
   </section>
 
@@ -335,32 +328,53 @@ python stock_quote.py -i 10 SH513100 BTC</code></pre>
     <a class="glow-button" href="https://github.com/bigdragonsoft/stock-quote" target="_blank" rel="noopener">前往 GitHub 仓库 →</a>
   </div>
 
+  <section id="打包">
+    <h2>程序打包</h2>
+    <p>您可以使用 PyInstaller 将程序打包为独立的可执行文件，方便在没有 Python 环境的电脑上运行。</p>
+    <ol>
+      <li>首先，安装 PyInstaller：</li>
+    </ol>
+    <pre><code>pip install pyinstaller</code></pre>
+    
+    <h3 style="margin-top: 30px;">打包 GUI 版本</h3>
+    <pre><code># --windowed 参数可以隐藏终端窗口 (适用于 Windows/macOS)
+pyinstaller --onefile --windowed --add-data "favorites.json;." --add-data "indexes.json;." --name="stock" --icon=icon.ico stock.py</code></pre>
+
+    <h3 style="margin-top: 30px;">打包 CLI 版本</h3>
+    <pre><code>pyinstaller --onefile --add-data "favorites.json;." --add-data "indexes.json;." --name="stock_quote_cli" --icon=icon.ico stock_cli.py</code></pre>
+    <p>打包完成后，可执行文件将位于生成的 <code>dist</code> 目录中。</p>
+  </section>
+
   <section id="源码">
-    <h2>仓库结构一览</h2>
+    <h2>仓库结构</h2>
     <ul>
-      <li><code>stock_quote.py</code> — 命令行查询主程序</li>
-      <li><code>stock_quote_gui.py</code> — 图形界面程序</li>
+      <li><code>stock.py</code> — 图形界面 (GUI) 主程序</li>
+      <li><code>stock_cli.py</code> — 命令行 (CLI) 主程序</li>
       <li><code>requirements.txt</code> — 依赖列表</li>
-      <li><code>favorites.json</code> — 自动生成的自选股数据文件</li>
-      <li><code>indexes.json</code> — 自动生成的指数数据文件</li>
-      <li><code>stock_quote.log</code> — 自动生成的错误日志文件</li>
-      <li><code>README.md / README_en.md</code> — 中英文说明</li>
-      <li>截图文件，比如 <code>screenshot_cli.png</code>、<code>screenshot_gui.png</code></li>
+      <li><code>favorites.json</code> — 默认自选股数据文件</li>
+      <li><code>indexes.json</code> — 默认指数数据文件</li>
+      <li>配置文件和日志会存储在用户目录的 <code>.stock_quote</code> 文件夹下。</li>
     </ul>
   </section>
 
   <section id="更新日志">
     <h2>更新日志</h2>
-    <h3>v1.1 (2025-08-14)</h3>
+    <h3>v1.2 (最近更新)</h3>
     <ul>
-      <li>将外汇行情数据源从新浪财经切换为东方财富网</li>
+      <li><strong>[CLI]</strong> 新增 <code>-e, --ext-data</code> 参数，用于显示美股盘前盘后价格。</li>
+      <li><strong>[CLI]</strong> 新增 <code>-t, --trading-only</code> 参数，用于仅显示交易中的行情。</li>
+      <li><strong>[CLI]</strong> 同步更新版本信息和帮助说明。</li>
+      <li><strong>[Docs]</strong> 全面更新项目介绍页面 (index.html) 和 README 文件。</li>
     </ul>
-    
-    <h3>v1.0 (2025-08-10)</h3>
+    <h3>v1.1</h3>
     <ul>
-      <li>修复命令行版本中键盘输入监听在部分 Linux 系统上的兼容性问题</li>
-      <li>优化图形界面版本的错误处理机制，增强程序稳定性</li>
-      <li>更新默认自选股列表，添加 IBIT (iShares Bitcoin Trust ETF)</li>
+      <li>将外汇行情数据源从新浪财经切换为东方财富网。</li>
+    </ul>
+    <h3>v1.0</h3>
+    <ul>
+      <li>修复 CLI 在部分 Linux 系统上的键盘监听兼容性问题。</li>
+      <li>优化 GUI 错误处理机制，增强稳定性。</li>
+      <li>更新默认自选股列表，添加 IBIT (iShares Bitcoin Trust ETF)。</li>
     </ul>
   </section>
 
@@ -388,7 +402,7 @@ python stock_quote.py -i 10 SH513100 BTC</code></pre>
       }
 
       const stored = localStorage.getItem(storageKey);
-      const initial = stored || 'light';
+      const initial = stored || (prefersDark.matches ? 'dark' : 'light');
       applyTheme(initial);
 
       const toggle = document.getElementById('themeToggle');

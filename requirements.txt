@@ -4,3 +4,4 @@ tabulate
 pystray
 pillow
 keyboard
+pyinstaller

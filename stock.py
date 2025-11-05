@@ -52,7 +52,7 @@ def log_error(symbol, data, error_message):
 class StockQuoteGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("带薪看盘")
+        self.root.title("带薪看盘 v1.2")
         self.root.geometry("800x600")
         
         # 创建一个共享的 Session

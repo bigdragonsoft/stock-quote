@@ -143,7 +143,7 @@ def display_version():
     """
     显示程序版本和版权信息
     """
-    version_text = """股票行情查看器
+    version_text = """带薪看盘
 
 版本: 1.2
 作者: GuoQiang
