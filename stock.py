@@ -13,6 +13,7 @@ import pystray
 from PIL import Image, ImageTk
 import sys
 import keyboard
+from datetime import datetime, time as dt_time
 
 # 配置日志
 log_file = os.path.join(os.path.dirname(__file__), 'stock_quote.log')
@@ -647,7 +648,7 @@ class StockQuoteGUI:
                 }
             else: # A-Share / HK-Share
                 region = "SH" if symbol.startswith("SH") else "SZ" if symbol.startswith("SZ") else "HK"
-                status = "OPEN" # Placeholder
+                status = self.get_market_status(region)
                 stock_info = {
                     "Region": region,
                     "Status": status,
@@ -669,6 +670,52 @@ class StockQuoteGUI:
         except Exception as e:
             log_error(symbol, response_text, f"Unknown error: {e}")
             return None
+    
+    def get_market_status(self, market):
+        """
+        根据当前时间判断市场状态
+        """
+        now = datetime.now()
+        weekday = now.weekday()  # Monday is 0 and Sunday is 6
+        
+        # Weekend
+        if weekday >= 5:
+            return "CLOSED"
+        
+        current_time = now.time()
+        
+        if market in ["SH", "SZ"]:  # A股市场
+            # A股交易时间:
+            # 上午: 9:30 - 11:30
+            # 下午: 13:00 - 15:00
+            morning_open = dt_time(9, 30)
+            morning_close = dt_time(11, 30)
+            afternoon_open = dt_time(13, 0)
+            afternoon_close = dt_time(15, 0)
+            
+            if (morning_open <= current_time <= morning_close) or \
+               (afternoon_open <= current_time <= afternoon_close):
+                return "OPEN"
+            else:
+                return "CLOSED"
+                
+        elif market == "HK":  # 港股市场
+            # 港股交易时间:
+            # 上午: 9:30 - 12:00
+            # 下午: 13:00 - 16:00
+            morning_open = dt_time(9, 30)
+            morning_close = dt_time(12, 0)
+            afternoon_open = dt_time(13, 0)
+            afternoon_close = dt_time(16, 0)
+            
+            if (morning_open <= current_time <= morning_close) or \
+               (afternoon_open <= current_time <= afternoon_close):
+                return "OPEN"
+            else:
+                return "CLOSED"
+        
+        # Default case
+        return "-"
     
     def trigger_data_load(self):
         """
@@ -720,7 +767,7 @@ class StockQuoteGUI:
         
         # 如果选中，则只显示交易中的数据
         if self.show_trading_only.get():
-            all_stock_info = [stock for stock in all_stock_info if stock.get('Status') == "OPEN"]
+            all_stock_info = [stock for stock in all_stock_info if stock.get('Status') != "CLOSED"]
             
         # 清除现有内容
         for widget in self.scrollable_frame.winfo_children():
