@@ -429,6 +429,25 @@ def get_market_status(market):
         else:
             return "CLOSED"
     
+    
+    elif market == "US": # 美股市场
+        # 美股夏令时交易时间 (北京时间):
+        # 晚上: 21:30 - 凌晨 4:00
+        # 美股冬令时交易时间 (北京时间):
+        # 晚上: 22:30 - 凌晨 5:00
+        
+        # 简单处理，不区分冬夏令时，按夏令时计算
+        trading_open_evening = dt_time(21, 30)
+        trading_close_evening = dt_time(23, 59, 59)
+        trading_open_morning = dt_time(0, 0)
+        trading_close_morning = dt_time(4, 0)
+
+        if (trading_open_evening <= current_time <= trading_close_evening) or \
+           (trading_open_morning <= current_time <= trading_close_morning):
+            return "OPEN"
+        else:
+            return "CLOSED"
+
     # Default case
     return "-"
 
@@ -486,7 +505,7 @@ def get_stock_info(session, symbol, headers):
                 "Status": "-"
             }
         elif market_type == "US-Share":
-            status = "OPEN" if parts[0] == 'us' else "CLOSED"
+            status = get_market_status("US")
             stock_info = {
                 "Symbol": symbol,
                 "Name": parts[1],

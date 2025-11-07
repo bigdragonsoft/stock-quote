@@ -103,6 +103,14 @@ class StockQuoteGUI:
         # 创建菜单栏
         menubar = tk.Menu(self.root)
         self.root.config(menu=menubar)
+
+        # 创建操作菜单
+        action_menu = tk.Menu(menubar, tearoff=0)
+        menubar.add_cascade(label="操作", menu=action_menu)
+        action_menu.add_command(label="刷新", command=self.trigger_data_load)
+        self.refresh_menu_item_label = tk.StringVar()
+        self.refresh_menu_item_label.set("停止刷新")
+        action_menu.add_command(label=self.refresh_menu_item_label.get(), command=self.toggle_refresh)
         
         # 创建帮助菜单
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -239,28 +247,20 @@ class StockQuoteGUI:
                                                    command=self.update_gui_with_data)
         self.trading_only_button.pack(side=tk.LEFT, padx=(10, 0))
         
-        # --- 右侧控件 (反向打包) ---
-        # 隐藏到系统托盘按钮
-        tray_button = ttk.Button(control_frame, text="隐藏到托盘", command=self.minimize_to_tray)
-        tray_button.pack(side=tk.RIGHT, padx=(10, 0))
-        
-        # 开始/停止刷新按钮
-        self.toggle_button = ttk.Button(control_frame, text="停止刷新", command=self.toggle_refresh)
-        self.toggle_button.pack(side=tk.RIGHT)
-        
-        # 手动刷新按钮
-        refresh_button = ttk.Button(control_frame, text="刷新", command=self.trigger_data_load)
-        refresh_button.pack(side=tk.RIGHT, padx=(0, 10))
-        
         # 刷新间隔设置
+        ttk.Label(control_frame, text="刷新间隔(秒):").pack(side=tk.LEFT, padx=(10, 0))
         self.interval_var = tk.StringVar(value=str(self.refresh_interval))
         interval_spinbox = ttk.Spinbox(control_frame, from_=5, to=300, width=5, 
                                       textvariable=self.interval_var, 
                                       command=self.update_interval)
-        interval_spinbox.pack(side=tk.RIGHT, padx=(0, 5))
+        interval_spinbox.pack(side=tk.LEFT, padx=(0, 5))
         # 绑定回车键事件
         interval_spinbox.bind('<Return>', lambda event: self.update_interval())
-        ttk.Label(control_frame, text="刷新间隔(秒):").pack(side=tk.RIGHT)
+
+        # --- 右侧控件 (反向打包) ---
+        # 隐藏到系统托盘按钮
+        tray_button = ttk.Button(control_frame, text="隐藏到托盘", command=self.minimize_to_tray)
+        tray_button.pack(side=tk.RIGHT, padx=(10, 0))
         
         # 设置全局快捷键
         keyboard.add_hotkey('ctrl+alt+z', self.minimize_to_tray)
@@ -665,7 +665,7 @@ class StockQuoteGUI:
                     "Percent": f"{float(parts[5]):.2f}%"
                 }
             elif market_type == "US-Share":
-                status = "OPEN" if parts[0] == 'us' else "CLOSED"
+                status = self.get_market_status("US")
                 stock_info = {
                     "Region": "US",
                     "Status": status,
@@ -746,6 +746,24 @@ class StockQuoteGUI:
             else:
                 return "CLOSED"
         
+        elif market == "US": # 美股市场
+            # 美股夏令时交易时间 (北京时间):
+            # 晚上: 21:30 - 凌晨 4:00
+            # 美股冬令时交易时间 (北京时间):
+            # 晚上: 22:30 - 凌晨 5:00
+            
+            # 简单处理，不区分冬夏令时，按夏令时计算
+            trading_open_evening = dt_time(21, 30)
+            trading_close_evening = dt_time(23, 59, 59)
+            trading_open_morning = dt_time(0, 0)
+            trading_close_morning = dt_time(4, 0)
+
+            if (trading_open_evening <= current_time <= trading_close_evening) or \
+               (trading_open_morning <= current_time <= trading_close_morning):
+                return "OPEN"
+            else:
+                return "CLOSED"
+
         # Default case
         return "-"
     
@@ -944,7 +962,7 @@ class StockQuoteGUI:
         """
         self.refresh_active = not self.refresh_active
         if self.refresh_active:
-            self.toggle_button.config(text="停止刷新")
+            self.refresh_menu_item_label.set("停止刷新")
             self.update_status_bar(f"自动刷新已启动 - 刷新间隔: {self.refresh_interval}秒")
             # 重启刷新工作线程
             self.root.after(1000, self.refresh_worker)
@@ -952,9 +970,14 @@ class StockQuoteGUI:
             remaining = int(self.refresh_interval - (time.time() - self.last_refresh_time))
             self.remaining_time_var.set(f"下次刷新: {remaining}秒")
         else:
-            self.toggle_button.config(text="开始刷新")
+            self.refresh_menu_item_label.set("开始刷新")
             self.update_status_bar("自动刷新已停止")
             self.remaining_time_var.set("")
+        
+        # 更新菜单项文本
+        menubar = self.root['menu']
+        action_menu = menubar.winfo_children()[0]
+        action_menu.entryconfig(1, label=self.refresh_menu_item_label.get())
     
     def show_indexes(self):
         """
