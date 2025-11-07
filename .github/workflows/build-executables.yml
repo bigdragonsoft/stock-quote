@@ -15,16 +15,16 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - os: ubuntu-latest
-            gui_asset_name: "stock"
-            cli_asset_name: "stock_quote_cli"
+            gui_asset_name: "stock-linux"
+            cli_asset_name: "stock_quote_cli-linux"
             icon_arg: "" # PyInstaller 在 Linux 上不支持设置图标
           - os: macos-latest
-            gui_asset_name: "stock-macOS"
-            cli_asset_name: "stock_quote_cli-macOS"
+            gui_asset_name: "stock-macos"
+            cli_asset_name: "stock_quote_cli-macos"
             icon_arg: "--icon icon.png"
           - os: windows-latest
-            gui_asset_name: "stock-Windows"
-            cli_asset_name: "stock_quote_cli-Windows"
+            gui_asset_name: "stock-windows.exe"
+            cli_asset_name: "stock_quote_cli-windows.exe"
             icon_arg: "--icon icon.ico"
 
     steps:
@@ -59,18 +59,31 @@ jobs:
     - name: Build CLI executable
       run: pyinstaller --onefile --add-data "favorites.json:." --add-data "indexes.json:." --name "${{ matrix.cli_asset_name }}" ${{ matrix.icon_arg }} stock_cli.py
 
-    # 将生成的 'dist' 目录中的所有文件作为一个构建产物上传
-    - name: Upload build artifact
+    # 将生成的可执行文件重命名并移动到统一目录
+    - name: Rename and organize executables
+      run: |
+        mkdir -p release-assets
+        mv dist/${{ matrix.gui_asset_name }}* release-assets/
+        mv dist/${{ matrix.cli_asset_name }}* release-assets/
+      shell: bash
+
+    # 将配置文件复制到发布资产目录
+    - name: Copy configuration files
+      run: |
+        cp favorites.json release-assets/
+        cp indexes.json release-assets/
+      
+    # 上传每个平台的构建产物
+    - name: Upload platform build artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: dist-${{ matrix.os }}
-        path: dist/
+        name: assets-${{ matrix.os }}
+        path: release-assets/
 
   # 任务二：等待所有构建完成后，统一发布
   release:
-    name: Create GitHub Release
+    name: Create Unified Release
     runs-on: ubuntu-latest
-    # 'needs: build' 确保此任务在所有平台的 build 任务都成功后才开始
     needs: build
     permissions:
       contents: write
@@ -79,12 +92,21 @@ jobs:
       - name: Download all build artifacts
         uses: actions/download-artifact@v3
         with:
-          # 将所有产物下载到 'artifacts' 目录下
-          path: artifacts/
+          path: downloaded-assets/
 
-      # 将所有下载的产物文件上传到 GitHub Release
+      # 整理所有平台的文件到一个统一的发布目录
+      - name: Organize all assets
+        run: |
+          mkdir unified-release
+          for dir in downloaded-assets/assets-*; do
+            if [ -d "$dir" ]; then
+              cp -r "$dir"/* unified-release/
+            fi
+          done
+
+      # 将所有文件上传到 GitHub Release
       - name: Upload assets to release
         uses: softprops/action-gh-release@v1
+        if: github.event_name == 'release'
         with:
-          # `files` 的通配符会匹配 artifacts/dist-ubuntu-latest/*, artifacts/dist-macos-latest/* 等所有文件
-          files: artifacts/dist-*/*
+          files: unified-release/*
