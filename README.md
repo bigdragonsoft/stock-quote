@@ -128,18 +128,62 @@ python stock_cli.py [选项] [股票/外汇/加密货币代码...]
     pip install pyinstaller
     ```
 
-2.  **打包 GUI 版本**:
-    ```bash
-    # 对于 Windows 和 macOS，--windowed 参数可以隐藏终端窗口
-    pyinstaller --onefile --windowed --add-data "favorites.json;." --add-data "indexes.json;." --name="stock" --icon=icon.ico stock.py
-    ```
+2.  **打包命令**:
 
-3.  **打包 CLI 版本**:
-    ```bash
-    pyinstaller --onefile --add-data "favorites.json;." --add-data "indexes.json;." --name="stock_quote_cli" --icon=icon.ico stock_cli.py
-    ```
+    -   **Windows**:
+        ```bash
+        # 打包 GUI 版本 (隐藏终端窗口)
+        pyinstaller --onefile --windowed --add-data "favorites.json;." --add-data "indexes.json;." --name="stock" --icon=icon.ico stock.py
+        
+        # 打包 CLI 版本
+        pyinstaller --onefile --add-data "favorites.json;." --add-data "indexes.json;." --name="stock_quote_cli" --icon=icon.ico stock_cli.py
+        ```
 
-4.  打包完成后，可执行文件将位于 `dist` 目录中。
+    -   **macOS**:
+        ```bash
+        # 打包 GUI 版本 (创建 .app 应用)
+        pyinstaller --onefile --windowed --add-data "favorites.json:." --add-data "indexes.json:." --name="stock" --icon=icon.icns stock.py
+        
+        # 打包 CLI 版本
+        pyinstaller --onefile --add-data "favorites.json:." --add-data "indexes.json:." --name="stock_quote_cli" stock_cli.py
+        ```
+        *注意*: 在 macOS 上，`--add-data` 的分隔符是 `:` 而不是 `;`。
+        
+        **如何创建 `.icns` 文件**:
+        macOS 使用 `.icns` 格式作为应用图标。您可以通过以下步骤从一张 `.png` 图片生成 `.icns` 文件：
+        1. 准备一张 1024x1024 像素的 PNG 图片 (例如 `icon.png`)。
+        2. 创建一个名为 `icon.iconset` 的文件夹。
+        3. 使用 `sips` 命令生成不同尺寸的图标：
+           ```bash
+           mkdir icon.iconset
+           sips -z 16 16     icon.png --out icon.iconset/icon_16x16.png
+           sips -z 32 32     icon.png --out icon.iconset/icon_16x16@2x.png
+           sips -z 32 32     icon.png --out icon.iconset/icon_32x32.png
+           sips -z 64 64     icon.png --out icon.iconset/icon_32x32@2x.png
+           sips -z 128 128   icon.png --out icon.iconset/icon_128x128.png
+           sips -z 256 256   icon.png --out icon.iconset/icon_128x128@2x.png
+           sips -z 256 256   icon.png --out icon.iconset/icon_256x256.png
+           sips -z 512 512   icon.png --out icon.iconset/icon_256x256@2x.png
+           sips -z 512 512   icon.png --out icon.iconset/icon_512x512.png
+           sips -z 1024 1024 icon.png --out icon.iconset/icon_512x512@2x.png
+           ```
+        4. 使用 `iconutil` 命令将 `.iconset` 文件夹转换为 `.icns` 文件：
+           ```bash
+           iconutil -c icns icon.iconset
+           ```
+        现在您就有了一个 `icon.icns` 文件可用于打包。
+
+    -   **Linux**:
+        ```bash
+        # 打包 GUI 版本
+        pyinstaller --onefile --add-data "favorites.json:." --add-data "indexes.json:." --name="stock" stock.py
+        
+        # 打包 CLI 版本
+        pyinstaller --onefile --add-data "favorites.json:." --add-data "indexes.json:." --name="stock_quote_cli" stock_cli.py
+        ```
+        *注意*: 在 Linux 上，`--add-data` 的分隔符也是 `:`。
+
+3.  打包完成后，可执行文件将位于 `dist` 目录中。
 
 ## 数据源
 

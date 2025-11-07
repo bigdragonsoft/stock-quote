@@ -128,18 +128,62 @@ You can use PyInstaller to package the application into an executable file, whic
     pip install pyinstaller
     ```
 
-2.  **Package the GUI Version**:
-    ```bash
-    # For Windows and macOS, the --windowed flag hides the terminal window
-    pyinstaller --onefile --windowed --add-data "favorites.json;." --add-data "indexes.json;." --name="WorkTimeStockWatcher" --icon=icon.ico stock.py
-    ```
+2.  **Packaging Commands**:
 
-3.  **Package the CLI Version**:
-    ```bash
-    pyinstaller --onefile --add-data "favorites.json;." --add-data "indexes.json;." --name="stock_quote_cli" --icon=icon.ico stock_cli.py
-    ```
+    -   **Windows**:
+        ```bash
+        # Package the GUI version (hides the terminal window)
+        pyinstaller --onefile --windowed --add-data "favorites.json;." --add-data "indexes.json;." --name="WorkTimeStockWatcher" --icon=icon.ico stock.py
+        
+        # Package the CLI version
+        pyinstaller --onefile --add-data "favorites.json;." --add-data "indexes.json;." --name="stock_quote_cli" --icon=icon.ico stock_cli.py
+        ```
 
-4.  The executable file will be located in the `dist` directory after packaging.
+    -   **macOS**:
+        ```bash
+        # Package the GUI version (creates a .app bundle)
+        pyinstaller --onefile --windowed --add-data "favorites.json:." --add-data "indexes.json:." --name="WorkTimeStockWatcher" --icon=icon.icns stock.py
+        
+        # Package the CLI version
+        pyinstaller --onefile --add-data "favorites.json:." --add-data "indexes.json:." --name="stock_quote_cli" stock_cli.py
+        ```
+        *Note*: On macOS, the separator for `--add-data` is `:` instead of `;`.
+
+        **How to create an `.icns` file**:
+        macOS uses the `.icns` format for application icons. You can generate an `.icns` file from a `.png` image with the following steps:
+        1. Prepare a 1024x1024 pixel PNG image (e.g., `icon.png`).
+        2. Create a folder named `icon.iconset`.
+        3. Use the `sips` command to generate icons of different sizes:
+           ```bash
+           mkdir icon.iconset
+           sips -z 16 16     icon.png --out icon.iconset/icon_16x16.png
+           sips -z 32 32     icon.png --out icon.iconset/icon_16x16@2x.png
+           sips -z 32 32     icon.png --out icon.iconset/icon_32x32.png
+           sips -z 64 64     icon.png --out icon.iconset/icon_32x32@2x.png
+           sips -z 128 128   icon.png --out icon.iconset/icon_128x128.png
+           sips -z 256 256   icon.png --out icon.iconset/icon_128x128@2x.png
+           sips -z 256 256   icon.png --out icon.iconset/icon_256x256.png
+           sips -z 512 512   icon.png --out icon.iconset/icon_256x256@2x.png
+           sips -z 512 512   icon.png --out icon.iconset/icon_512x512.png
+           sips -z 1024 1024 icon.png --out icon.iconset/icon_512x512@2x.png
+           ```
+        4. Use the `iconutil` command to convert the `.iconset` folder to an `.icns` file:
+           ```bash
+           iconutil -c icns icon.iconset
+           ```
+        Now you have an `icon.icns` file ready for packaging.
+
+    -   **Linux**:
+        ```bash
+        # Package the GUI version
+        pyinstaller --onefile --add-data "favorites.json:." --add-data "indexes.json:." --name="WorkTimeStockWatcher" stock.py
+        
+        # Package the CLI version
+        pyinstaller --onefile --add-data "favorites.json:." --add-data "indexes.json:." --name="stock_quote_cli" stock_cli.py
+        ```
+        *Note*: On Linux, the separator for `--add-data` is also `:`.
+
+3.  The executable file will be located in the `dist` directory after packaging.
 
 ## Data Sources
 
