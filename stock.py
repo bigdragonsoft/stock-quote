@@ -1,4 +1,5 @@
 import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import json
 import threading
 import time
@@ -15,6 +16,9 @@ import sys
 import keyboard
 from datetime import datetime, time as dt_time
 import shutil
+
+# Suppress only the InsecureRequestWarning from urllib3 needed for this script
+requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
 # --- 配置和路径管理 ---
 
@@ -111,6 +115,10 @@ class StockQuoteGUI:
         self.refresh_menu_item_label = tk.StringVar()
         self.refresh_menu_item_label.set("停止刷新")
         action_menu.add_command(label=self.refresh_menu_item_label.get(), command=self.toggle_refresh)
+        action_menu.add_separator()
+        action_menu.add_command(label="隐藏到托盘", command=self.minimize_to_tray)
+        action_menu.add_separator()
+        action_menu.add_command(label="退出", command=self.on_closing)
         
         # 创建帮助菜单
         help_menu = tk.Menu(menubar, tearoff=0)
@@ -258,9 +266,6 @@ class StockQuoteGUI:
         interval_spinbox.bind('<Return>', lambda event: self.update_interval())
 
         # --- 右侧控件 (反向打包) ---
-        # 隐藏到系统托盘按钮
-        tray_button = ttk.Button(control_frame, text="隐藏到托盘", command=self.minimize_to_tray)
-        tray_button.pack(side=tk.RIGHT, padx=(10, 0))
         
         # 设置全局快捷键
         keyboard.add_hotkey('ctrl+alt+z', self.minimize_to_tray)
@@ -807,7 +812,12 @@ class StockQuoteGUI:
         # 保存最新数据
         self.last_stock_data = all_stock_info
         # 在主线程中更新GUI
-        self.root.after(0, self.update_gui_with_data)
+        try:
+            if self.root.winfo_exists():
+                self.root.after(0, self.update_gui_with_data)
+        except tk.TclError:
+            # 避免在窗口销毁后调用 after 导致的错误
+            pass
 
     def update_gui_with_data(self):
         """
