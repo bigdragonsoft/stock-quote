@@ -13,7 +13,6 @@ import logging
 import pystray
 from PIL import Image, ImageTk
 import sys
-import keyboard
 from datetime import datetime, time as dt_time
 import shutil
 
@@ -267,9 +266,6 @@ class StockQuoteGUI:
 
         # --- 右侧控件 (反向打包) ---
         
-        # 设置全局快捷键
-        keyboard.add_hotkey('ctrl+alt+z', self.minimize_to_tray)
-        
         # 创建编辑框架（默认隐藏）
         self.edit_frame = ttk.Frame(main_frame)
         self.edit_frame_visible = False
@@ -496,11 +492,11 @@ class StockQuoteGUI:
         except requests.exceptions.RequestException as e:
             log_error(symbol, "", f"Request error: {e}")
             return None
-        except json.JSONDecodeError:
-            log_error(symbol, response_text, "JSON parsing error")
+        except json.JSONDecodeError as e:
+            log_error(symbol, "", f"JSON parsing error: {e}")
             return None
         except Exception as e:
-            log_error(symbol, response_text, f"Unknown error: {e}")
+            log_error(symbol, "", f"Unknown error: {e}")
             return None
 
     def get_eastmoney_forex_info(self, symbol):
@@ -1064,8 +1060,11 @@ class StockQuoteGUI:
     
     def setup_tray_icon(self):
         """
-        设置系统托盘图标
+        设置系统托盘图标（仅限Windows）
         """
+        if platform.system() != "Windows":
+            return
+            
         try:
             # 尝试加载图标文件
             icon_path = get_resource_path('icon.ico')
