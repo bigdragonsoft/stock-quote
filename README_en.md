@@ -17,7 +17,7 @@ The GUI version is named **"Work-Time Stock Watcher"** (带薪看盘), aiming to
 
 ### GUI Version Exclusive Features
 
-- **System Tray**: Minimize the application to the system tray and use the global hotkey `Ctrl+Alt+Z` to quickly hide/show the window.
+- **System Tray**: Minimize the application to the system tray. On Windows systems, you can use the global hotkey `Ctrl+Alt+Z` to quickly hide/show the window.
 - **Advanced Data Display**:
   - **Pre/Post-Market**: Freely choose whether to display pre-market and post-market prices for US stocks.
   - **Trading Status Filter**: One-click filter to show only the symbols that are currently in their trading session.
