@@ -123,6 +123,34 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install pyinstaller
+          brew install create-dmg
+          pip install pillow
+
+      - name: Create icon
+        run: |
+          mkdir icon.iconset
+          # 使用项目中的 icon.png 创建各种尺寸的图标
+          python3 - << 'EOF'
+          from PIL import Image
+          import os
+
+          # 读取原始图标
+          original = Image.open('icon.png')
+
+          # 创建各种尺寸的图标
+          sizes = [16, 32, 64, 128, 256, 512, 1024]
+          for size in sizes:
+              resized = original.resize((size, size), Image.Resampling.LANCZOS)
+              resized.save(f'icon.iconset/icon_{size}x{size}.png')
+              # 创建 @2x 版本
+              if size <= 512:
+                  double_size = size * 2
+                  resized = original.resize((double_size, double_size), Image.Resampling.LANCZOS)
+                  resized.save(f'icon.iconset/icon_{size}x{size}@2x.png')
+          EOF
+
+          # 将 iconset 转换为 icns 文件
+          iconutil -c icns icon.iconset
 
       - name: Build GUI executable
         run: |
@@ -132,18 +160,63 @@ jobs:
         run: |
           pyinstaller --onefile --add-data "favorites.json:." --add-data "indexes.json:." --name "macos-arm64-stock-cli" stock_cli.py
 
+      - name: Create App Bundle for GUI
+        run: |
+          mkdir -p "Stock Quote.app/Contents/MacOS"
+          mkdir -p "Stock Quote.app/Contents/Resources"
+          cp dist/macos-arm64-stock "Stock Quote.app/Contents/MacOS/Stock Quote"
+          cp icon.icns "Stock Quote.app/Contents/Resources/AppIcon.icns"
+          chmod +x "Stock Quote.app/Contents/MacOS/Stock Quote"
+
+          # 使用 adhoc 签名
+          codesign --force --deep --sign - "Stock Quote.app"
+          # 创建 Info.plist
+          cat > "Stock Quote.app/Contents/Info.plist" << EOL
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>CFBundleExecutable</key>
+            <string>Stock Quote</string>
+            <key>CFBundleIconFile</key>
+            <string>AppIcon</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.bigdragonsoft.stockquote</string>
+            <key>CFBundleName</key>
+            <string>Stock Quote</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>${{ github.event.inputs.version || github.ref_name }}</string>
+            <key>LSMinimumSystemVersion</key>
+            <string>11.0.0</string>
+            <key>NSHighResolutionCapable</key>
+            <true/>
+          </dict>
+          </plist>
+          EOL
+
       - name: Organize release files
         run: |
           mkdir release-assets
-          mv dist/macos-arm64-stock release-assets/
+          # 创建 DMG 文件
+          create-dmg \
+            --volname "Stock Quote" \
+            --volicon "icon.icns" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --icon "Stock Quote.app" 200 190 \
+            --hide-extension "Stock Quote.app" \
+            --app-drop-link 600 185 \
+            "release-assets/StockQuote-macos-arm64.dmg" \
+            "Stock Quote.app"
+          
+          # CLI 版本打包为 tar.gz
           mv dist/macos-arm64-stock-cli release-assets/
-          # 添加可执行权限
-          chmod +x release-assets/macos-arm64-stock
           chmod +x release-assets/macos-arm64-stock-cli
-          # 打包并保留执行权限
-          tar -czf macos-arm64-stock.tar.gz -C release-assets macos-arm64-stock
-          tar -czf macos-arm64-stock-cli.tar.gz -C release-assets macos-arm64-stock-cli
-          mv *.tar.gz release-assets/
+          tar -czf release-assets/StockQuote-CLI-macos-arm64.tar.gz -C release-assets macos-arm64-stock-cli
+          rm release-assets/macos-arm64-stock-cli
 
       - name: Upload to release
         uses: softprops/action-gh-release@v1
