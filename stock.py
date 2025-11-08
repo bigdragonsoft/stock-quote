@@ -115,8 +115,10 @@ class StockQuoteGUI:
         self.refresh_menu_item_label.set("停止刷新")
         action_menu.add_command(label=self.refresh_menu_item_label.get(), command=self.toggle_refresh)
         action_menu.add_separator()
-        action_menu.add_command(label="隐藏到托盘", command=self.minimize_to_tray)
-        action_menu.add_separator()
+        # 仅在 Windows 平台显示"隐藏到托盘"选项
+        if platform.system() == "Windows":
+            action_menu.add_command(label="隐藏到托盘", command=self.minimize_to_tray)
+            action_menu.add_separator()
         action_menu.add_command(label="退出", command=self.on_closing)
         
         # 创建帮助菜单
