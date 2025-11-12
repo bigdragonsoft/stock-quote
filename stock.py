@@ -95,6 +95,10 @@ class StockQuoteGUI:
         # 创建界面
         self.create_widgets()
         
+        # 绑定快捷键（仅Windows平台）
+        if platform.system() == "Windows":
+            self.root.bind('<Control-Alt-z>', lambda event: self.minimize_to_tray())
+        
         # 获取初始数据
         self.trigger_data_load()
         
@@ -117,7 +121,7 @@ class StockQuoteGUI:
         action_menu.add_separator()
         # 仅在 Windows 平台显示"隐藏到托盘"选项
         if platform.system() == "Windows":
-            action_menu.add_command(label="隐藏到托盘", command=self.minimize_to_tray)
+            action_menu.add_command(label="隐藏到托盘 Ctrl+Alt+Z", command=self.minimize_to_tray)
             action_menu.add_separator()
         action_menu.add_command(label="退出", command=self.on_closing)
         

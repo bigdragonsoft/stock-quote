@@ -82,7 +82,7 @@ jobs:
 
       - name: Build GUI executable
         run: |
-          pyinstaller --onefile --windowed --add-data "favorites.json;." --add-data "indexes.json;." --name "windows-x64-stock" stock.py
+          pyinstaller --onefile --windowed --add-data "favorites.json;." --add-data "indexes.json;." --add-data "icon.ico;." --icon=icon.ico --name "windows-x64-stock" stock.py
 
       - name: Build CLI executable
         run: |
